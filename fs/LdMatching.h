@@ -33,10 +33,10 @@ private:
     ParameterReader *lm_params;
     double*** dNd2rdyTable;
 	double Xmax,Ymax,Xmin,Ymin,dx,dy;
-    double Xcm, Ycm;  //center of the energy density 
-    double edMax;  //maximum energy density in the lab frame
+    double *Xcm, *Ycm;  //center of the energy density 
+    double *edMax;  //maximum energy density in the lab frame
 	int    nRap;
-	double rapMin, rapMax;
+	double rapMin, rapMax, dRap;
 	int    Maxx, Maxy;
 	double Tau0, Taui, Tauf, Dtau, delta_tau;
 	int EOS_type;
@@ -50,6 +50,7 @@ private:
     
 	EOS eos;
     bool outputData;
+    bool loadTmnTable;
     string Result_Dir, Dst_Folder;
     int phin_range;  //range of phi_n: 0 to phin_range
     void findCM_ed(const int iRap = 0);  //find the center of the profile
@@ -66,6 +67,7 @@ public:
 	void Diagnostic(int iRap, int i, int j);
     void MultiMatching(string filename);
 
+    void LoadTmnNexus(string filename);   //load initial Tmn from Nexus output
 	void ReadTable(string filename);
     void ReaddETable(string filename);
     void CalTmunu(const int iRap); 
@@ -83,30 +85,29 @@ public:
     void CalPresTable(const int nrap=1);
     void CalVis2Ideal_Ratio(const int iRap=0);
     void GenerateSdTable(const int nrap = 1);
-    double getEpx(int n, double* phin_tbl,const int iRap = 0);         //calculate eccentricity in the free-streaming stage
+    double getEpx(int n, double* phin_tbl, int iRap = 0);         //calculate eccentricity in the free-streaming stage
 
     // void OutputTable(const char *filename, const int iRap);
-    void OutputTable_ux(const char *filename, const int iRap=0);
-    void OutputTable_uy(const char *filename, const int iRap=0);
-    void OutputTable_uz(const char *filename, const int iRap=1);
+    void OutputTable_ux(const char *filename, int iRap=0);
+    void OutputTable_uy(const char *filename, int iRap=0);
+    void OutputTable_uz(const char *filename, int iRap=1);
     void Output4colTable_ed(const char *filename, const int iRap=0);
 
     //for debugging
     void OutputTmnTable(const char *filename,const int iRap, const int mu, const int nu);
     void Output4colTable_visratio(const char *filename, const int iRap);
 
-    void  OutputTable_ed(const char *filename, const int iRap);
-    void  OutputTable_Sd(const char *filename, const int iRap=0);
-    void  OutputTable_pressure(const char *filename, const int iRap=0);
-    void  OutputTable_BulkPi(const char *filename, const int iRap=0);
+    void  OutputTable_ed(const char *filename, int iRap);
+    void  OutputTable_Sd(const char *filename, int iRap=0);
+    void  OutputTable_pressure(const char *filename, int iRap=0);
+    void  OutputTable_BulkPi(const char *filename, int iRap=0);
 
     // void  CalPiSquare(const int iRap=0);
     // void  Test_piSq_part(const int iRap=0);
     void  Output_picontract_comp(const char *filename, const int iRap=0);
-    void  OutputTables_Pimn(const int iRap=0);
+    void  OutputTables_Pimn(string folderName, int iRap=0);
     void  OutputTable_3D(const char *filename, double**** data, int maxi, int maxj, int maxk, const int iRap=0);
     void  OutputTable_1D(const char *filename, double** data, int maxi, const int iRap=0);
-    double getEpx_test(const int irap=1);
     inline string parseString(string input, string delimiter) //extract the string before delimiter
     {
         string result = input.substr(0, input.find(delimiter));

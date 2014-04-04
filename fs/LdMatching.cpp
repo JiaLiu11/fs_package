@@ -23,23 +23,35 @@ LdMatching::LdMatching(ParameterReader *params_in, string result_dir)
   dy = lm_params->getVal("dy");
   Maxx=(int)((Xmax-Xmin)/dx+0.1)+1;
   Maxy=(int)((Ymax-Ymin)/dy+0.1)+1;
-  nRap=lm_params->getVal("ny");
+
+  dRap=lm_params->getVal("dRap");
   rapMin=lm_params->getVal("rapmin");
   rapMax=lm_params->getVal("rapmax");
+  nRap = (int)((rapMax-rapMin)/dRap+0.1)+1;
 
   // additional run option
   dEdyd2rdphip_option = lm_params->getVal("dEdyd2rdphip_dist");
   dEdyd2rTable = 0;
   dEdyd2rdphipTable = 0;
   dEdydphipTable = 0;
+
   phip_order = 100;
   sfactor = lm_params->getVal("sfactor");
   gluon_prefactor = 16.0/pow(2*M_PI, 3.0);
 
+  loadTmnTable = lm_params->getVal("loadTmnTable");
+
   //center of the profile, max energy initialization
-  Xcm = 0.;
-  Ycm = 0.;
-  edMax = -1.;
+  edMax = new double [nRap];
+  Xcm = new double [nRap];
+  Ycm = new double [nRap];
+  for(int i=0;i<nRap;i++)
+  {
+    edMax[i]=-1;
+    Xcm[i]=0;
+    Ycm[i]=0;
+  }
+
   dNd2rdyTable = 0;
   phin_range = 10;
 
@@ -103,6 +115,11 @@ LdMatching::~LdMatching()
       delete [] dEdydphipTable[iy];
     delete [] dEdydphipTable;
   } 
+
+  delete [] edMax;
+  delete [] Xcm;
+  delete [] Ycm;
+
 }
 
 void LdMatching::echo()
@@ -153,18 +170,14 @@ void LdMatching::MultiMatching(string filename)
 /* Read in one matter distribution and do multiple times free-streaming and 
    Landau matching
 */
-  ReadTable(filename);
+  if(loadTmnTable == false)
+    ReadTable(filename);
   //
   Tau0 = lm_params->getVal("tau0");   //the time when gluon density is generated
   Taui = lm_params->getVal("taumin");
   Tauf = lm_params->getVal("taumax");
   Dtau = lm_params->getVal("dtau");
   int maxT = (int)((Tauf-Taui)/Dtau+0.1)+1;
-
-//find the eccentricity at initial time Tau0 which serves as normalization factor
-//for v2/ecc2.
-  ofstream of_epx0;
-  of_epx0.open("data/Epx_initial.dat", std::ios_base::app);
 
   double tau10 = Tau0;   
   delta_tau = tau10 - Tau0; 
@@ -176,118 +189,161 @@ void LdMatching::MultiMatching(string filename)
   Dst_Folder = dst_folder_stream0.str();
   system(("mkdir " + Dst_Folder).c_str());
 
-  Streaming=new FreeStrm(Xmax, Ymax, dx, dy,
-        nRap, rapMin, rapMax, Tau0, tau10);
-  Streaming->CopyTable(dNd2rdyTable);  //assign data table to FreeStrm class
+  Streaming=new FreeStrm(Xmax, Ymax, dx, dy, nRap, rapMin, rapMax, Tau0, tau10);
+  if(loadTmnTable==false)
+    Streaming->CopyTable(dNd2rdyTable);  //assign data table to FreeStrm class    
                                        //to speed up interpolation
   //data table for LdMatching result et.al.
   DataTable=new CellData(Xmax, Ymax, dx, dy, nRap, rapMin, rapMax);
   
-  CalTmunu(0);
-  Matching_eig(1);   //Do the matching and output energy density profile
-      
-  CalPresTable();  //only can be done if ed table is ready
-  GenerateSdTable(); //ideal EOS is still under testing
-  CalBulkVis();   //calculate Bulk Pi and output it
-  CalShearVis();  //calculate shear Pi and output Pi tensor
+  if(loadTmnTable == true)
+  {
+    cout << "Start to read Tmn instead of free-streaming initial profile!"<<endl;
+    LoadTmnNexus(filename);
+  }
+  else
+    CalTmunu(nRap);
+  Matching_eig(nRap);   //Do the matching and output energy density profile        
+  CalPresTable(nRap);  //only can be done if ed table is ready
+  GenerateSdTable(nRap); //ideal EOS is still under testing
+  CalBulkVis(nRap);   //calculate Bulk Pi and output it
+  CalShearVis(nRap);  //calculate shear Pi and output Pi tensor     
 
-  //output velocity profile
+  //make folder for current rapidity
   if(outputData==true)
   {
+    ostringstream Dst_foler_iy;
     ostringstream filename_stream_ux0;
-    filename_stream_ux0.str("");
-    filename_stream_ux0 << Dst_Folder << "/ux_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
     ostringstream filename_stream_uy0;
-    filename_stream_uy0.str("");
-    filename_stream_uy0 << Dst_Folder << "/uy_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
-    // ostringstream filename_stream_Tmn;
-    // filename_stream_Tmn << Dst_Folder << "/Tmn_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
-    OutputTable_ux(filename_stream_ux0.str().c_str());
-    OutputTable_uy(filename_stream_uy0.str().c_str());
-    // OutputTmnTable(filename_stream_Tmn.str().c_str(), 0 , 0, 0);
-  }
-
-  double* event_phin;
-  event_phin = new double [phin_range];
-  of_epx0 << setw(8)  << setprecision(5) << Tau0
-         << setw(12) << setprecision(5) << tau10;
-  for(int iorder = 0; iorder<phin_range; iorder++)
+    ostringstream filename_stream_ed;
+    ostringstream filename_stream_pressure;
+    ostringstream filename_stream_sd;
+    ostringstream filename_stream_ppi;
+    ostringstream ztag;  //folder name for rapidity
+    ostringstream filename_stream_epx;
+    for(int iy=0;iy<nRap;iy++)
     {
-      of_epx0 << setw(20) << setprecision(10)<< getEpx(iorder, event_phin, 0);
-      of_epx0 << setw(20) << setprecision(10)<< event_phin[iorder];
-    }
-  of_epx0 << endl;
+      Dst_foler_iy.str("");
+      ztag.str("");
+      ztag << "/z_" << (rapMin + dRap*iy);   //z=iy+1
+      Dst_foler_iy << dst_folder_stream0.str() << ztag.str();
+      system(("mkdir " + Dst_foler_iy.str()).c_str());
+      
+      filename_stream_ux0.str("");
+      filename_stream_ux0 << Dst_foler_iy.str() << "/ux_profile.dat";      
+      filename_stream_uy0.str("");
+      filename_stream_uy0 << Dst_foler_iy.str() << "/uy_profile.dat";
+  
+      OutputTable_ux(filename_stream_ux0.str().c_str(), iy);
+      OutputTable_uy(filename_stream_uy0.str().c_str(), iy);
+      
+      filename_stream_ed.str("");
+      filename_stream_ed << Dst_foler_iy.str() <<"/ed_profile.dat";
+      OutputTable_ed(filename_stream_ed.str().c_str(), iy);  
+    
+      filename_stream_pressure.str("");
+      filename_stream_pressure << Dst_foler_iy.str() << "/Pressure_kln.dat";
+      OutputTable_pressure(filename_stream_pressure.str().c_str(), iy); 
+
+      filename_stream_sd.str("");
+      filename_stream_sd << Dst_foler_iy.str() <<"/sd_profile.dat";
+      OutputTable_Sd(filename_stream_sd.str().c_str(), iy);  
+
+      filename_stream_ppi.str("");
+      filename_stream_ppi << Dst_foler_iy.str() << "/BulkPi_profile.dat";
+      OutputTable_BulkPi(filename_stream_ppi.str().c_str(), iy);    
+
+
+      OutputTables_Pimn(Dst_foler_iy.str(),iy);  
+    //find the eccentricity at initial time Tau0 which serves as normalization factor
+    //for v2/ecc2.
+      filename_stream_epx.str("");
+      filename_stream_epx << Dst_foler_iy.str() <<"/Epx_initial.dat";
+      ofstream of_epx0;
+      of_epx0.open(filename_stream_epx.str().c_str(), std::ios_base::app);
+      double* event_phin;
+      event_phin = new double [phin_range];
+      for(int iorder = 0; iorder<phin_range; iorder++)
+      {
+        of_epx0 << setw(5) << setprecision(3) << iorder;
+        of_epx0 << setw(18) << setprecision(9)<< getEpx(iorder, event_phin, iy);
+        of_epx0 << setw(18) << setprecision(9)<< event_phin[iorder] << endl;
+      }
+      of_epx0 << endl;
+      of_epx0.close();  
+      delete [] event_phin;                
+    }//<->for iy=0:nRap
+  }//<->if outputData==true
+ 
+  //Diagnostic(12, 6, 7);
   //clean up before leaving
   delete DataTable;
   delete Streaming;
-  delete [] event_phin;
-  of_epx0.close();
 
+// //Now do the matching specified by the given parameters from Taui to Tauf
+//   ofstream of_epx;
+//   of_epx.open("data/Epx_time_evolve.dat", std::ios_base::app);
 
-//Now do the matching specified by the given parameters from Taui to Tauf
-  ofstream of_epx;
-  of_epx.open("data/Epx_time_evolve.dat", std::ios_base::app);
+//   cout << "Start to do the Matching from tau_i=" << Taui
+//        << " to tau_f=" << Tauf
+//        << endl;  
+//   for(int t_i=0; t_i < maxT; t_i++)
+//   {
+//     double tau1 = Taui + t_i*Dtau;   
 
-  cout << "Start to do the Matching from tau_i=" << Taui
-       << " to tau_f=" << Tauf
-       << endl;  
-  for(int t_i=0; t_i < maxT; t_i++)
-  {
-    double tau1 = Taui + t_i*Dtau;   
+//     delta_tau = tau1 - Tau0; 
+//     //prepare the folder for output profiles
+//     ostringstream dst_folder_stream;
+//     dst_folder_stream << Result_Dir << "/" << tau1;
+//     Dst_Folder = dst_folder_stream.str();
+//     system(("mkdir " + Dst_Folder).c_str());
 
-    delta_tau = tau1 - Tau0; 
-    //prepare the folder for output profiles
-    ostringstream dst_folder_stream;
-    dst_folder_stream << Result_Dir << "/" << tau1;
-    Dst_Folder = dst_folder_stream.str();
-    system(("mkdir " + Dst_Folder).c_str());
-
-    Streaming=new FreeStrm(Xmax, Ymax, dx, dy,
-          nRap, rapMin, rapMax, Tau0, tau1);
-    Streaming->CopyTable(dNd2rdyTable);  //assign data table to FreeStrm class
-                                         //to speed up interpolation
-    //data table for LdMatching result et.al.
-    DataTable=new CellData(Xmax, Ymax, dx, dy, nRap, rapMin, rapMax);
+//     Streaming=new FreeStrm(Xmax, Ymax, dx, dy,
+//           nRap, rapMin, rapMax, Tau0, tau1);
+//     Streaming->CopyTable(dNd2rdyTable);  //assign data table to FreeStrm class
+//                                          //to speed up interpolation
+//     //data table for LdMatching result et.al.
+//     DataTable=new CellData(Xmax, Ymax, dx, dy, nRap, rapMin, rapMax);
     
-    CalTmunu(0);
-    Matching_eig(1);   //Do the matching and output energy density profile
+//     CalTmunu(0);
+//     Matching_eig(1);   //Do the matching and output energy density profile
         
-    CalPresTable();  //only can be done if ed table is ready
-    GenerateSdTable(); //ideal EOS is still under testing
-    CalBulkVis();   //calculate Bulk Pi and output it
-    CalShearVis();  //calculate shear Pi and output Pi tensor
+//     CalPresTable();  //only can be done if ed table is ready
+//     GenerateSdTable(); //ideal EOS is still under testing
+//     CalBulkVis();   //calculate Bulk Pi and output it
+//     CalShearVis();  //calculate shear Pi and output Pi tensor
 
-    //output velocity profile
-    if(outputData==true)
-    {
-      ostringstream filename_stream_ux;
-      filename_stream_ux.str("");
-      filename_stream_ux << Dst_Folder << "/ux_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
-      ostringstream filename_stream_uy;
-      filename_stream_uy.str("");
-      filename_stream_uy << Dst_Folder << "/uy_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
-      // ostringstream filename_stream_Tmn;
-      // filename_stream_Tmn << Dst_Folder << "/Tmn_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
-      OutputTable_ux(filename_stream_ux.str().c_str());
-      OutputTable_uy(filename_stream_uy.str().c_str());
-      // OutputTmnTable(filename_stream_Tmn.str().c_str(), 0 , 0, 0);
-    }
-    event_phin = new double [phin_range];
-    of_epx << setw(8)  << setprecision(5) << Tau0
-           << setw(12) << setprecision(5) << tau1;
-    for(int iorder = 0; iorder<phin_range; iorder++)
-    {
-      of_epx << setw(20) << setprecision(10)<< getEpx(iorder, event_phin, 0);
-      of_epx << setw(20) << setprecision(10)<< event_phin[iorder];      
-    }
-    of_epx << endl;           
-    cout << "Matching is done at tau=" << tau1 << "!" << endl;
-    //clean up before leaving
-    delete DataTable;
-    delete Streaming;
-    delete [] event_phin;
-  }//<->for t_i=1:maxT
-  of_epx.close();
+//     //output velocity profile
+//     if(outputData==true)
+//     {
+//       ostringstream filename_stream_ux;
+//       filename_stream_ux.str("");
+//       filename_stream_ux << Dst_Folder << "/ux_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
+//       ostringstream filename_stream_uy;
+//       filename_stream_uy.str("");
+//       filename_stream_uy << Dst_Folder << "/uy_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
+//       // ostringstream filename_stream_Tmn;
+//       // filename_stream_Tmn << Dst_Folder << "/Tmn_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
+//       OutputTable_ux(filename_stream_ux.str().c_str());
+//       OutputTable_uy(filename_stream_uy.str().c_str());
+//       // OutputTmnTable(filename_stream_Tmn.str().c_str(), 0 , 0, 0);
+//     }
+//     event_phin = new double [phin_range];
+//     of_epx << setw(8)  << setprecision(5) << Tau0
+//            << setw(12) << setprecision(5) << tau1;
+//     for(int iorder = 0; iorder<phin_range; iorder++)
+//     {
+//       of_epx << setw(20) << setprecision(10)<< getEpx(iorder, event_phin, 0);
+//       of_epx << setw(20) << setprecision(10)<< event_phin[iorder];      
+//     }
+//     of_epx << endl;           
+//     cout << "Matching is done at tau=" << tau1 << "!" << endl;
+//     //clean up before leaving
+//     delete DataTable;
+//     delete Streaming;
+//     delete [] event_phin;
+//   }//<->for t_i=1:maxT
+//   of_epx.close();
 
 //********************************************************************************
 //********************************************************************************  
@@ -377,6 +433,53 @@ void LdMatching::MultiMatching(string filename)
       delete Streaming;       
     }
   } //<->if(dEdyd2rdphip_option==true)
+}
+
+void LdMatching::LoadTmnNexus(string filename)
+{
+  ifstream DataFile(filename.c_str());
+  if (!DataFile)
+  {
+     cout << "ReadTable::readFromFile error: file " << filename << " does not exist." << endl;
+     exit(-1);
+  }
+
+  cout << "Start to read in Tmn table " << filename << endl;  
+  
+  int mu, nu;
+  int x,y,z;
+  double Tmn;
+
+  string comment_line;  //store comment line
+  getline(DataFile, comment_line);  //read in to skip the comment line
+  cout << comment_line << endl;
+  while (!DataFile.eof())
+  {    
+    DataFile >> mu;
+    DataFile >> nu;
+    DataFile >> x;
+    DataFile >> y;
+    DataFile >> z;
+    DataFile >> Tmn;
+    // convert Nexus indices to CellData indices format: celldata mu nu and x,y are indices, starting at 0.
+    DataTable->SetTmn(int(z-1),int(x-1), int(y-1), int(mu-1), int(nu-1), Tmn);
+  }
+    cout << "Data table has been read into memory!" << endl;  //this line should only be output once
+  
+  DataFile.close();
+  // //test
+  // ofstream of;
+  // of.open("data/test.dat", std::ios_base::app);  
+  // z=int(nRap/2); //mid rapidity
+  // cout << "z="<< z << endl;
+  // for(int i=0;i<Maxx;i++)
+  //   for(int j=0;j<Maxy;j++)
+  //   {
+  //     if(DataTable->GetTmn(z,i,j,0,0)!=0)
+  //       of << i+1 <<' '<< j+1 << ' ' << DataTable->GetTmn(z,i,j,0,0) << endl;
+  //   }
+  // of.close();
+
 }
 
 
@@ -623,6 +726,7 @@ void LdMatching::Matching_eig(const int nrap)
   //cout<<"Start Matching-----------------------"<<endl;
 
   for(int iy=0;iy<nrap;iy++)
+  {
     for(int i=0;i<Maxx;i++)
       for(int j=0;j<Maxy;j++) 
       {
@@ -753,23 +857,17 @@ void LdMatching::Matching_eig(const int nrap)
       gsl_vector_complex_free(eval);
       gsl_matrix_complex_free(evec);
 
-      }//for j=0:Maxy
+      }//for i,j=0:Maxy
+
+    //find the weighted center of the energy density profile
+    findCM_ed(iy);
+  
+    //regulate ed and u^\mu in the dilute region, debug
+    regulateDiluteRegion(iy);
+  }
   //cout<<"Matching Complete!"<<endl;
 
-  //find the weighted center of the energy density profile
-  findCM_ed();
 
-  //regulate ed and u^\mu in the dilute region, debug
-  regulateDiluteRegion();
-
-  //prepare file name
-  if(outputData==true)
-  {
-    ostringstream filename_stream;
-    filename_stream.str("");
-    filename_stream << Dst_Folder <<"/ed_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
-    OutputTable_ed(filename_stream.str().c_str(), 0);  
-  }
 }
 
 
@@ -778,13 +876,13 @@ void LdMatching::regulateDiluteRegion(const int iRap)
    Modify u0 accordingly. 
 */
 {
-  double ed_max = edMax;
-  if(ed_max<0)
+  double ed_max = edMax[iRap];
+  if(edMax<0)
   {
     cout << "Max of the energy density has not been assigned!" << endl;
-    findCM_ed();
-    ed_max = edMax;
-    cout << "Max of the energy density is found to be: " << ed_max 
+    findCM_ed(iRap);
+    ed_max = edMax[iRap];
+    cout << "Max of the energy density is found to be: " << edMax 
          << " Now proceed." << endl;
   }
 
@@ -842,14 +940,16 @@ This is excuted after the matching
   x_ave = x_ave/(weight_total + 1e-18);
   y_ave = y_ave/(weight_total + 1e-18);
 
-  Xcm = x_ave;
-  Ycm = y_ave;
-  edMax = weight_max;
+  Xcm[iRap] = x_ave;
+  Ycm[iRap] = y_ave;
+  edMax[iRap] = weight_max;
 
-  // cout << "Weighted center of profile is: " << endl
+  // cout << "iRap = "<<iRap << endl
+  //      << "Weighted center of profile is: " << endl
   //      << "("
-  //      << Xcm << ", " << Ycm 
-  //      << ")" <<endl;  //debug
+  //      << Xcm[iRap] << ", " << Ycm[iRap] 
+  //      << ")" 
+  //      <<"Maximum energy:" << edMax[iRap] <<endl;  //debug
 }
 
 
@@ -886,26 +986,19 @@ void LdMatching::CalPresTable(const int nrap)
           DataTable->SetPres(iy, i, j, pres_temp);
         }
   }
-
-  if(outputData==true)
-  {
-    ostringstream filename_stream;
-    filename_stream.str("");
-    filename_stream << Dst_Folder << "/Pressure_kln_tauf_" << Tau0+delta_tau << ".dat";
-    OutputTable_pressure(filename_stream.str().c_str(), 0);      
-  }
   //cout<<"Pressure table complete!----------------------------"<<endl<<endl;
 }
 
 void LdMatching::GenerateSdTable(const int nrap)
 {
   double sd_temp = 0;
-  double ed_max = edMax;
 //  cout<<"Generating Entropy density table from energy density------------"<<endl;
-
+  double ed_max;
   if(EOS_type == 1)   //ideal EOS, assuming free massless gluonic gas
   {
     for(int iy=0;iy<nrap;iy++)
+    {
+      ed_max = edMax[iy];
       for(int i=0;i<Maxx;i++)
         for(int j=0;j<Maxy;j++)
         {
@@ -922,7 +1015,9 @@ void LdMatching::GenerateSdTable(const int nrap)
             sd_temp = 4.0/3.0*ed_temp/temp; 
             DataTable->SetSd(iy, i, j, sd_temp);
           }
-        }//for j=0:Maxy    
+        }//for j=0:Maxy        
+    }
+  
   }//if EOS_type==1
 
   else if(EOS_type == 2)
@@ -933,18 +1028,10 @@ void LdMatching::GenerateSdTable(const int nrap)
         {
           sd_temp=eos.sd(DataTable->GetEd(iy, i, j)); // Return the entropy density from the energy density ed0.
           DataTable->SetSd(iy, i, j, sd_temp);
-        }    
+        }        
   }
 
 //  cout<<"Entropy density table generated!"<<endl;  
-        //prepare file name
-  if(outputData==true)
-  {
-    ostringstream filename_stream;
-    filename_stream.str("");
-    filename_stream << Dst_Folder <<"/sd_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
-    OutputTable_Sd(filename_stream.str().c_str(), 0);  
-  }
 }
 
 
@@ -997,14 +1084,6 @@ void LdMatching::CalBulkVis(const int nrap)
 
         DataTable->SetBulk_Pi(iy, i, j, result);
       }
-  //output bulkpi table
-  if(outputData==true)
-  {
-    ostringstream filename_stream;
-    filename_stream.str("");
-    filename_stream << Dst_Folder << "/BulkPi_kln_tauf_" << Tau0+delta_tau << ".dat";
-    OutputTable_BulkPi(filename_stream.str().c_str(), 0);      
-  }
   //cout<<"Bulk viscosity table complete!"<<endl<<endl; 
 }
 
@@ -1101,8 +1180,7 @@ void LdMatching::CalShearVis(const int nrap)
   }
   logfile.close();
   //cout<<"Shear viscosity table Pi_mu nu complete!"<<endl<<endl;
-  if(outputData==true)
-    OutputTables_Pimn(0);
+
 }
 
 
@@ -1491,107 +1569,6 @@ double LdMatching::getShiftedProfile(double ***data, int i, int j, double x0, do
     }
 }
 
-double LdMatching::getEpx_test(const int nrap)
-// Epx = \int{dx*dy*e(x,y)*(y^2-x^2)*gamma(ux,uy)}/\int{dx*dy*e(x,y)*(y^2+x^2)*gamma(ux,uy)}
-// gamma factor is inlucded, since Landau matching generates flow, in order to transform energy
-// density to the lab frame, gamma factor should be included.
-{
-  cout<<"Calculating spatial eccentricity Epx----------------"<<endl;
-  double Epx=0.0;
-  
-  double epx_nu_real = 0.0;  //numerator of epx
-  double epx_nu_img = 0.0;
-  double Epx_angle = 0.0;
-  double epx_dn = 0.0;  //denominator of epx
-
-  //load in ed, ux, uy table
-  double ***ed_temp  = new double** [nrap];
-  double ***ux_temp  = new double** [nrap];
-  double ***uy_temp  = new double** [nrap];
-  ux_temp  = new double** [nrap];
-  for(int iy=0;iy<nrap;iy++) 
-  {
-    ed_temp[iy] =  new double* [Maxx];
-    ux_temp[iy] =  new double* [Maxx];
-    uy_temp[iy] =  new double* [Maxx];
-    
-    for(int i=0;i<Maxx;i++) 
-    {
-      ed_temp[iy][i] = new double [Maxy];
-      ux_temp[iy][i] = new double [Maxy];  
-      uy_temp[iy][i] = new double [Maxy];
-     
-      for(int j=0;j<Maxy;j++) 
-      {
-        ed_temp[iy][i][j]=DataTable->GetEd(iy, i, j);
-        ux_temp[iy][i][j]=DataTable->GetUm(iy, i, j, 1);
-        uy_temp[iy][i][j]=DataTable->GetUm(iy, i, j, 2);
-      }
-    }
-  }//<-> for iy=0:nRap
-//printout shifted profile, debug
- //  cout << "output shifted profile for check!" << endl;
-	// ofstream ed_of, ux_of, uy_of, gamma_of;
- //  ed_of.open("data/ed_kln_shifted.dat",std::ios_base::out);
- //  ux_of.open("data/ux_kln_shifted.dat",std::ios_base::out);
- //  uy_of.open("data/uy_kln_shifted.dat",std::ios_base::out);
- //  gamma_of.open("data/gamma_kln_shifted.dat",std::ios_base::out);
-  for(int i=0; i<Maxx; i++)
-  {
-      for(int j=0; j<Maxy; j++)
-     {
-       double x = Xmin + dx*i;
-       double y = Ymin + dy*j;
-
-       double ed_shifted = getShiftedProfile(ed_temp, i, j, Xcm, Ycm, 0, true, 0);  //forbid ed=negative
-       double ux_shifted = getShiftedProfile(ux_temp, i, j, Xcm, Ycm, 0, false, 0);
-       double uy_shifted = getShiftedProfile(uy_temp, i, j, Xcm, Ycm, 0, false, 0);
-       double gamma = sqrt(1. + ux_shifted * ux_shifted + uy_shifted * uy_shifted);
-
-       //output shifted profiles , debug
-			 // ed_of << setw(20) << setprecision(10) << ed_shifted;
-    //    ux_of << setw(20) << setprecision(10) << ux_shifted;
-	   //   uy_of << setw(20) << setprecision(10) << uy_shifted;
-			 // gamma_of << setw(20) << setprecision(10) << gamma;
-
-       epx_nu_real += ed_shifted * (y*y - x*x)* gamma * dx*dy;
-       epx_nu_img += ed_shifted * ( y * x) * gamma * dx * dy;  //imaginary part
-       epx_dn += ed_shifted * (y*y + x*x)* gamma * dx*dy;
-     }       
-			 // ed_of << endl;   //debug
-    //    ux_of << endl;
-			 // uy_of << endl;
-			 // gamma_of << endl;
-  }//<-> for i=0:Maxx
-			// ed_of.close();
-   //    ux_of.close();
-   //    uy_of.close();
-			// gamma_of.close();  
-  Epx = sqrt( epx_nu_real * epx_nu_real + 4.0 * epx_nu_img * epx_nu_img )
-       /(epx_dn + 1e-18);
-  Epx_angle = atan2(2.0 * epx_nu_img, (epx_nu_real + 1e-18));
-
-  // cout<<"Spatial Eccentricity complete!"<<endl
-  //     <<"epx real=" << epx_nu_real << ", epx img=" << -2*epx_nu_img << endl;
-  // cout << "Epx_angle =" <<Epx_angle << endl;
-  //clean up before leave
-  for(int iy=0;iy<nrap;iy++)  
-  {
-    for(int i=0;i<Maxx;i++) 
-    {
-      delete [] ed_temp[iy][i];
-      delete [] ux_temp[iy][i];
-      delete [] uy_temp[iy][i];
-    }
-  
-    delete [] ed_temp[iy];
-    delete [] ux_temp[iy];
-    delete [] uy_temp[iy];
-  }
-  return Epx;
-}
-
-
 double LdMatching::getEpx(int nth_order, double* phin_tbl, int iRap)
 // Epx = \int{dx*dy*e(x,y)*(y^2-x^2)*gamma(ux,uy)}/\int{dx*dy*e(x,y)*(y^2+x^2)*gamma(ux,uy)}
 // gamma factor is inlucded, since Landau matching generates flow, in order to transform energy
@@ -1611,8 +1588,8 @@ double LdMatching::getEpx(int nth_order, double* phin_tbl, int iRap)
   {
       for(int j=0; j<Maxy; j++)
      {
-       double x = Xmin + dx*i - Xcm;  //recenter the profile
-       double y = Ymin + dy*j - Ycm;
+       double x = Xmin + dx*i - Xcm[iRap];  //center the profile
+       double y = Ymin + dy*j - Ycm[iRap];
        double phi = atan2(y,x);
 
        double ed_temp = DataTable->GetEd(iRap, i, j);
@@ -1645,7 +1622,7 @@ double LdMatching::getEpx(int nth_order, double* phin_tbl, int iRap)
   return Epx;
 }
 
-void LdMatching::OutputTable_ux(const char *filename, const int iRap)
+void LdMatching::OutputTable_ux(const char *filename, int iRap)
 {
   ofstream of;
   of.open(filename, std::ios_base::out);
@@ -1663,7 +1640,7 @@ void LdMatching::OutputTable_ux(const char *filename, const int iRap)
 
 
 
-void LdMatching::OutputTable_uy(const char *filename, const int iRap)
+void LdMatching::OutputTable_uy(const char *filename, int iRap)
 {
   ofstream of;
   of.open(filename, std::ios_base::out);
@@ -1746,17 +1723,15 @@ void LdMatching::Output4colTable_visratio(const char *filename, const int iRap)
 }
 
 
-void LdMatching::OutputTables_Pimn(const int iRap)
+void LdMatching::OutputTables_Pimn(string folderName, int iRap)
 {
   ostringstream pi_tbl_stream;
-  pi_tbl_stream.str("");
 
-  for(int ipii=0;ipii<3;ipii++)
-    for(int ipij=ipii;ipij<3;ipij++)
+  for(int ipii=0;ipii<4;ipii++)
+    for(int ipij=ipii;ipij<4;ipij++)
     {
       pi_tbl_stream.str("");
-      pi_tbl_stream << Dst_Folder <<"/Pi" << ipii << ipij
-                    << "_kln_tauf_" << Tau0+delta_tau
+      pi_tbl_stream << folderName <<"/Pi" << ipii << ipij
                     << ".dat" ;
       ofstream of;
       of.open(pi_tbl_stream.str().c_str(), std::ios_base::out);
@@ -1769,27 +1744,10 @@ void LdMatching::OutputTables_Pimn(const int iRap)
       }
       of.close();
     }
-
-  //dump Pi33 table
-  pi_tbl_stream.str(""); //clean filename for Pi33 table
-  pi_tbl_stream << Dst_Folder << "/Pi" << 3 << 3
-              << "_kln_tauf_" << Tau0+delta_tau
-              << ".dat" ;
-  ofstream of;
-  of.open(pi_tbl_stream.str().c_str(), std::ios_base::out);
-
-  for(int i=0;i<Maxx;i++)      
-  {
-    for(int j=0;j<Maxy;j++)
-      of << setprecision(12) << setw(22) << DataTable->GetPi_mn(iRap,i, j, 3, 3); 
-    of << endl;
-  }
-  of.close();
-  //cout << "Pi_mn table dumped!"<<endl;
 }
 
 
-void LdMatching::OutputTable_Sd(const char *filename, const int iRap)
+void LdMatching::OutputTable_Sd(const char *filename, int iRap)
 {
   ofstream of;
   of.open(filename, std::ios_base::out);
@@ -1809,7 +1767,7 @@ void LdMatching::OutputTable_Sd(const char *filename, const int iRap)
 }
 
 
-void LdMatching::OutputTable_ed(const char *filename, const int iRap)
+void LdMatching::OutputTable_ed(const char *filename, int iRap)
 {
   ofstream of;
   of.open(filename, std::ios_base::out);
@@ -1829,7 +1787,7 @@ void LdMatching::OutputTable_ed(const char *filename, const int iRap)
 }
 
 
-void LdMatching::OutputTable_pressure(const char *filename, const int iRap)
+void LdMatching::OutputTable_pressure(const char *filename, int iRap)
 {
   ofstream of;
   of.open(filename, std::ios_base::out);
@@ -1849,7 +1807,7 @@ void LdMatching::OutputTable_pressure(const char *filename, const int iRap)
   of.close(); 
 }
 
-void LdMatching::OutputTable_BulkPi(const char *filename, const int iRap)
+void LdMatching::OutputTable_BulkPi(const char *filename, int iRap)
 {
   ofstream of;
   of.open(filename, std::ios_base::out);

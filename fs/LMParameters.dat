@@ -2,20 +2,20 @@
 # Parameters for Free-streaming and Landau Matching code
 
 # Event number option
-event_mode = 1                       # if positive, only process this one event
-nevents = 22                         # total number of events need to be processed
+event_mode = 1                      # if positive, only process this one event
+nevents = 1                         # total number of events need to be processed
 
 # Additional run mode options
-dEdyd2rdphip_dist = 1                  # bool: calculate energy density 
+dEdyd2rdphip_dist = 0                  # bool: calculate energy density 
 
 # Grid option
-xmax = 20                           # Max grid value in x-direction with unit fm
-ymax = 20                           # Max grid value in y-direction with unit fm
-dx   = 0.1                           # Step size in x-direction in fm
-dy   = 0.1                           # Step size in y-direction in fm
-ny   = 1                             # total number of rapidity bin
-rapmin=0                             # Max rapidity value
-rapmax=0                             # Max rapidity value
+xmax = 8                              # Max grid value in x-direction with unit fm
+ymax = 8                              # Max grid value in y-direction with unit fm
+dx   = 0.32                        # Step size in x-direction in fm
+dy   = 0.32                        # Step size in y-direction in fm
+dRap = 0.5                              # Step size in rapidity
+rapmin=-6                              # Min rapidity value
+rapmax=6                             # Max rapidity value
 
 # EOS option
 iEOS = 2                             # 1: ideal EOS, no entropy output; 2: s95PCE
@@ -29,9 +29,10 @@ output=1                             # 1: output all data tables; 2: only output
 
 # Matching time option
 tau0  =0.01                          # Initial time of free-streaming
-taumin=0.2                           # Minimum value of matching time in fm/c
-taumax=0.2                           # Max value of matching time in fm/c
-dtau  =0.1                           # Step size in mathing time in fm/c
+taumin=0.01                           # Minimum value of matching time in fm/c
+taumax=0.01                           # Max value of matching time in fm/c
+dtau  =0.01                           # Step size in mathing time in fm/c
 
-
+# T^munu read in option
+loadTmnTable = 1                    # Boolean variable to allow read in Tmunu table
 

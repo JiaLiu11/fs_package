@@ -42,8 +42,8 @@ int main(int argc, char *argv[])
     //prepare readin filename for event-by-event eccentricity fluctuation
     ostringstream filename_stream;
     filename_stream.str("");
-    filename_stream << "data/events/sd_event_"
-                    << event_num  <<"_block.dat";
+    filename_stream << "data/events/tmunu-"
+                    << event_num  <<".dat";
 //    filename_stream << "data/sdAvg_order_2_block"
 //                    << ".dat";
 
