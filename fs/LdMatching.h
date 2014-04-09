@@ -93,7 +93,7 @@ public:
 
     //for debugging
     void OutputTmnTable(const char *filename,const int iRap, const int mu, const int nu);
-    void Output4colTable_visratio(const char *filename, const int iRap);
+    void OutputVisRatio(const char *filename, const int iRap=0);
 
     void  OutputTable_ed(const char *filename, const int iRap);
     void  OutputTable_Sd(const char *filename, const int iRap=0);
