@@ -24,10 +24,10 @@ ifeq "$(MAIN)" ""
 MAIN		=	lm.e
 endif
 
-SRC		=	main.cpp arsenal.cpp CellData.cpp EOS.cpp Freestreaming.cpp table.cpp\
+SRC		=	main.cpp arsenal.cpp CellData.cpp EOS.cpp Freestreaming.cpp \
 			gauss_quadrature.cpp LdMatching.cpp mistools.cpp ParameterReader.cpp \
 
-INC		= 	arsenal.h CellData.h EOS.h Freestreaming.h table.h\
+INC		= 	arsenal.h CellData.h EOS.h Freestreaming.h \
 			gauss_quadrature.h LdMatching.h mistools.h ParameterReader.h\
 
 
