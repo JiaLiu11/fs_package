@@ -14,8 +14,8 @@ typedef struct
    double Edec, Tdec, Pdec;
    double Bn, muB, muS;
    double pi00, pi01, pi02, pi11, pi12, pi22, pi33;
+   double bulkPi;
    double particle_mu[Maxparticle];
-   double ppi;
 }FO_surf;
 
 int get_filelength(string filepath);
