@@ -108,7 +108,7 @@ int read_resonance(particle_info* particle)
 {
    int Nparticle=0;
    cout << " -- Read in particle resonance decay table...";
-   ifstream resofile("EOS/pdg.dat");
+   ifstream resofile("EOS/pdg-full.dat");
    int local_i = 0;
    int dummy_int;
    while (!resofile.eof())
