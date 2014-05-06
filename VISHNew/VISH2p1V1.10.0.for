@@ -757,7 +757,7 @@ CSHEN===EOS from tables end====================================================
      &                  CPi33*HbarC,
      &                  CPi00*HbarC,CPi01*HbarC,CPi02*HbarC,
      &                  CPi11*HbarC,CPi12*HbarC,CPi22*HbarC,
-     &                  CPPI
+     &                  CPPI*HbarC
           
           TM = Time
           XM = XX
@@ -1732,7 +1732,7 @@ C--------- ---with the same physical unit as energt dencity              EPS1(I,
      &                  TDEC,BAMU,SMU, PDec, CPi33*HbarC,
      &                  CPi00*HbarC,CPi01*HbarC,CPi02*HbarC,
      &                  CPi11*HbarC,CPi12*HbarC,CPi22*HbarC,
-     &                  CPPI
+     &                  CPPI*HbarC
          END IF
 
 CSHEN=====================================================================
