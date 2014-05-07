@@ -268,13 +268,23 @@ void EmissionFunctionArray::calculate_dN_ptdptdphidy(int particle_idx)
                   double deltaf = (1 - F0_IS_NOT_SMALL*sign*f0)*Wfactor*deltaf_prefactor;
                   double bulk_deltaf = -(1. - F0_IS_NOT_SMALL*sign*f0)*bulkPi*(bulkvisCoefficients[0]*mass*mass + bulkvisCoefficients[1]*pdotu + bulkvisCoefficients[2]*pdotu*pdotu);
                   double result;
-                  if(1 + deltaf + bulk_deltaf < 0.0) //set results to zero when delta f turns whole expression to negative
-                     result = 0.0;
-                  else
+                  //if(1 + deltaf + bulk_deltaf < 0.0) //set results to zero when delta f turns whole expression to negative
+                  //   result = 0.0;
+                  //else
                      result = prefactor*degen*f0*(1. + deltaf + bulk_deltaf)*pdsigma*tau;
 
                   dN_ptdptdphidy_tmp += result*delta_eta;
-                  if(CALCULATEDED3P) dE_ptdptdphidy_tmp += result*delta_eta*mT;
+                  //if(CALCULATEDED3P) dE_ptdptdphidy_tmp += result*delta_eta*mT;
+                  if(CALCULATEDED3P) 
+                  {
+                    // energy from ideal and shear viscous part
+                    double result_ideal_shear   = prefactor*degen*f0*(1+deltaf)*pdsigma*tau;      
+                    // get bulk part energy
+                    double deltasigma = tau*(da0*(1-gammaT*gammaT)-da1*gammaT*gammaT*vx-da2*gammaT*gammaT*vy);
+                    double pdeltap = mass*mass - pdotu*pdotu;
+                    double result_bulk  = 1.0/3.0*prefactor*degen*deltasigma*pdeltap*f0*bulk_deltaf;                   
+                    dE_ptdptdphidy_tmp += result_ideal_shear*delta_eta*pt + result_bulk*delta_eta;
+                  }                  
               } // k
           } // l
 
