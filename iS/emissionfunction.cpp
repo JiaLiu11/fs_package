@@ -19,6 +19,7 @@
 #define GROUPING_PARTICLES 1 // set to 1 to perform calculations for similar particles together
 #define PARTICLE_DIFF_TOLERANCE 0.01 // particles with mass and chemical potential (for each FZ-cell) difference less than this value will be considered to be identical (b/c Cooper-Frye)
 #define INCLUDE_DELTAF 1 // include delta f correction to particle distribution function in Cooper-Frye Formula
+#define INCLUDE_BULKDELTAF 1 // include delta f correction to particle distribution function in Cooper-Frye Formula
 #define CALCULATEDED3P true // calculate transverse energy distribution E*dE/d^3p from Cooper-Frye formula
 
 using namespace std;
@@ -107,6 +108,8 @@ EmissionFunctionArray::EmissionFunctionArray(double particle_y_in, Table* chosen
   }
   last_particle_idx = -1;
 
+  //arrays for bulk delta f coefficients
+  bulkdf_coeff = new Table ("EOS/BulkDf_Coefficients_Hadrons_s95p-v0-PCE.dat");
 }
 
 
@@ -116,6 +119,7 @@ EmissionFunctionArray::~EmissionFunctionArray()
   if(CALCULATEDED3P) delete dE_ptdptdphidy;
   delete[] chosen_particles_01_table;
   delete[] chosen_particles_sampling_table;
+  delete bulkdf_coeff;
 }
 
 
@@ -133,9 +137,12 @@ void EmissionFunctionArray::calculate_dN_ptdptdphidy(int particle_idx)
   double mass = particle->mass;
   double sign = particle->sign;
   double degen = particle->gspin;
+
   double prefactor = 1.0/(8.0*(M_PI*M_PI*M_PI))/hbarC/hbarC/hbarC;
 
   FO_surf* surf = &FOsurf_ptr[0];
+
+  double *bulkvisCoefficients = new double [3];
 
   // for intermedia results
   double dN_ptdptdphidy_tab[pT_tab_length][phi_tab_length];
@@ -191,6 +198,7 @@ void EmissionFunctionArray::calculate_dN_ptdptdphidy(int particle_idx)
           // new way
           double px = pT*trig_phi_table[j][0];
           double py = pT*trig_phi_table[j][1];
+
           double dN_ptdptdphidy_tmp = 0.0;
           double dE_ptdptdphidy_tmp = 0.0;
 
@@ -204,6 +212,7 @@ void EmissionFunctionArray::calculate_dN_ptdptdphidy(int particle_idx)
               double deltaf_prefactor = 1.0/(2.0*Tdec*Tdec*(Edec+Pdec))*INCLUDE_DELTAF;
 
               double mu = surf->particle_mu[last_particle_idx];
+
               double tau = surf->tau;
               double vx = surf->vx;
               double vy = surf->vy;
@@ -218,11 +227,12 @@ void EmissionFunctionArray::calculate_dN_ptdptdphidy(int particle_idx)
               double pi12 = surf->pi12;
               double pi22 = surf->pi22;
               double pi33 = surf->pi33;
+              double bulkPi = surf->bulkPi;
 
               double v2 = vx*vx + vy*vy;
-
               double gammaT = 1.0/sqrt(1.0 - v2);
-
+              
+              getbulkvisCoefficients(Tdec, bulkvisCoefficients);
 
               for (int k=0; k<eta_tab_length; k++)
               {
@@ -245,7 +255,8 @@ void EmissionFunctionArray::calculate_dN_ptdptdphidy(int particle_idx)
                   double pt = mT*hypertrig_etas_table[k][0];
                   double pz = mT*hypertrig_etas_table[k][1];
 
-                  double expon = (gammaT*(pt*1 - px*vx - py*vy) - mu) / Tdec;
+                  double pdotu = gammaT*(pt*1 - px*vx - py*vy);
+                  double expon = (pdotu - mu) / Tdec;
                   double f0 = 1./(exp(expon)+sign);       //thermal equilibrium distributions
 
                   // Must adjust this to be correct for the p*del \tau term.  The plus sign is
@@ -255,11 +266,12 @@ void EmissionFunctionArray::calculate_dN_ptdptdphidy(int particle_idx)
                   //viscous corrections
                   double Wfactor = pt*pt*pi00 - 2.0*pt*px*pi01 - 2.0*pt*py*pi02 + px*px*pi11 + 2.0*px*py*pi12 + py*py*pi22 + pz*pz*pi33;
                   double deltaf = (1 - F0_IS_NOT_SMALL*sign*f0)*Wfactor*deltaf_prefactor;
+                  double bulk_deltaf = -(1. - F0_IS_NOT_SMALL*sign*f0)*bulkPi*(bulkvisCoefficients[0]*mass*mass + bulkvisCoefficients[1]*pdotu + bulkvisCoefficients[2]*pdotu*pdotu);
                   double result;
-                  if(1+deltaf < 0.0) //set results to zero when delta f turns whole expression to negative
+                  if(1 + deltaf + bulk_deltaf < 0.0) //set results to zero when delta f turns whole expression to negative
                      result = 0.0;
                   else
-                     result = prefactor*degen*f0*(1+deltaf)*pdsigma*tau;
+                     result = prefactor*degen*f0*(1. + deltaf + bulk_deltaf)*pdsigma*tau;
 
                   dN_ptdptdphidy_tmp += result*delta_eta;
                   if(CALCULATEDED3P) dE_ptdptdphidy_tmp += result*delta_eta*mT;
@@ -280,6 +292,8 @@ void EmissionFunctionArray::calculate_dN_ptdptdphidy(int particle_idx)
     dN_ptdptdphidy->set(i+1,j+1,dN_ptdptdphidy_tab[i][j]);
     if(CALCULATEDED3P) dE_ptdptdphidy->set(i+1,j+1,dE_ptdptdphidy_tab[i][j]);
   }
+
+  delete [] bulkvisCoefficients;
 
   sw.toc();
   cout << endl << "Finished " << sw.takeTime() << " seconds." << endl;
@@ -759,4 +773,29 @@ bool EmissionFunctionArray::particles_are_the_same(int idx1, int idx2)
     }
 
     return true;
+}
+
+void EmissionFunctionArray::getbulkvisCoefficients(double Tdec, double* bulkvisCoefficients)
+{
+   if(INCLUDE_BULKDELTAF)
+   {
+      double Tdec_fm = Tdec/hbarC;  // [1/fm]
+
+      // load from file
+      bulkvisCoefficients[0] = bulkdf_coeff->interp(1, 2, Tdec_fm, 5)/pow(hbarC, 3);  //B0 [fm^3/GeV^3]
+      bulkvisCoefficients[1] = bulkdf_coeff->interp(1, 3, Tdec_fm, 5)/pow(hbarC, 2);  // D0 [fm^3/GeV^2]
+      bulkvisCoefficients[2] = bulkdf_coeff->interp(1, 4, Tdec_fm, 5)/pow(hbarC, 3);  // E0 [fm^3/GeV^3]
+      
+      // parameterization for mu = 0
+      //bulkvisCoefficients[0] = exp(-15.04512474*Tdec_fm + 11.76194266)/pow(hbarC, 3); //B0[fm^3/GeV^3]
+      //bulkvisCoefficients[1] = exp( -12.45699277*Tdec_fm + 11.4949293)/hbarC/hbarC;  // D0 [fm^3/GeV^2]
+      //bulkvisCoefficients[2] = -exp(-14.45087586*Tdec_fm + 11.62716548)/pow(hbarC, 3);  // E0 [fm^3/GeV^3]
+   }
+   else
+   {
+      bulkvisCoefficients[0] = 0.0; //B0[fm^3/GeV]
+      bulkvisCoefficients[1] = 0.0;  // D0 [fm^3/GeV^2]
+      bulkvisCoefficients[2] = 0.0;  // E0 [fm^3/GeV^3]
+   }
+   return;
 }
