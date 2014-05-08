@@ -204,92 +204,10 @@
       End Subroutine
 !-----------------------------------------------------------------------
 
-************************************************************************
-      Subroutine invertFunctionDbinary(func, varL, varR, abserr, relerr,
-     &                                 varY, varResult)
-!     Purpose:
-!       Return the varResult=func^-1(varY) using Binary Search method
-!       -- func: double precision 1-argument function to be inverted
-!       -- varL: left boundary
-!       -- varR: right boundary
-!       -- abserr: absolute error
-!       -- relerr: relative error
-!       -- varY: the value of the variable to be inverted
-!       -- varResult: the return inverted value
-!
-!   Solve: f(x)=0 with f(x)=table(x)-varY
-      Implicit None
 
-!     declare input parameters
-      Double Precision func
-      Double Precision varL, varR, abserr, relerr, varY, varResult
-
-!     pre-fixed parameters
-      Integer tolerance
-
-!     declare local variables
-      Double Precision ptrl, ptrm, ptrh ! used in iterations
-      Double Precision intervalL
-      Double Precision eps
-      Double Precision Fleft, Fright, Fmid
-      Integer impatience ! number of iterations
-
-!     initialize parameters
-      tolerance = 60
-      impatience = 0
-      eps = 1D-20
-
-      if(varR < varL) then
-         print *, "Error: invertFunctionDbinary, varR = ", varR, 
-     &            " < varL ", varL
-         stop
-      endif
-      ptrl = varL
-      ptrh = varR
-      ptrm = (ptrh + ptrl)/2.
-      intervalL = ptrh - ptrl
-
-      Fleft  = func(ptrl) - varY
-      Fright = func(ptrh) - varY
-      if(Fleft*Fright > 0) then
-         print *, "Error: invertFunctionDbinary: boundary values have 
-     &             the some sign"
-         stop
-      endif
-      if(abs(Fleft) == 0) then
-         varResult = ptrl
-         return
-      endif
-      if(abs(Fright) == 0) then
-         varResult = ptrh
-         return
-      endif
-      Do While (intervalL > abserr .and. intervalL > relerr*ptrm)
-        Fmid   = func(ptrm) - varY
-        if(abs(Fmid) < eps) then
-           exit
-        endif
-        if(Fleft*Fmid < 0) then
-           ptrh = ptrm
-        else
-           ptrl = ptrm
-        endif
-        ptrm = (ptrh + ptrl)/2.
-        intervalL = ptrh - ptrl
-        impatience = impatience + 1
-        If (impatience>tolerance) Then
-          Print *, "Subroutine invertFunctionDbinary: ",
-     &                "max number of iterations reached!"
-          Stop
-        End If
-      End Do ! do while loop
-      varResult = ptrm
-      
-      End Subroutine
-!-----------------------------------------------------------------------
 
 ************************************************************************
-      Subroutine invertFunctionD(func,varL,varR,dd,varI,varX,varResult)
+      Subroutine invertFunctionD(func,varL,varR,acc,varI,varX,varResult)
 !     Purpose:
 !       Return the varResult=func^-1(varX) using Newton method.
 !       -- func: double precision 1-argument function to be inverted
@@ -306,7 +224,8 @@
 
 !     declare input parameters
       Double Precision func
-      Double Precision varL, varR, dd, varI, varX, varResult
+      Double Precision varL, varR, acc, varI, varX, varResult
+      Double precision dd
 
 !     pre-fixed parameters
       Double Precision accuracy
@@ -318,7 +237,8 @@
       Integer impatience ! number of iterations
 
 !     initialize parameters
-      accuracy = dd*1e-3
+      accuracy = acc
+      dd = DMAX1(1D-6,1D-3*abs(varR - varL))
 
       tolerance = 60
       impatience = 0
@@ -360,9 +280,16 @@
           Stop
           !Print*, XX1, XX2
         End If
+        dd = abs(XX2 - XX1)*0.05
       End Do ! <=> abs(XX2-XX1)>accuracy
-
-      varResult = XX2
+      
+      if(XX2 .lt. varL) then
+         varResult = varL
+      else if(XX2 .gt. varR) then
+         varResult = varR
+      else
+         varResult = XX2
+      endif
 
       End Subroutine
 !-----------------------------------------------------------------------
