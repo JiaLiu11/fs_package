@@ -155,6 +155,7 @@ C *******************************J.Liu changes*******************************
       Integer InitialURead
       Common/LDInitial/ InitialURead  ! IintURead =1 read initial velocity profile
       Logical ::  Output_avg  
+      Common/OutputMore/ Output_avg      
 C *******************************J.Liu changes end***************************
 
       call prepareInputFun() ! this is the initialization function in InputFun.for
@@ -599,7 +600,8 @@ CSHEN===EOS from tables end====================================================
 
       Logical :: Output_avg    ! J.Liu: for CheckPiAll() output
       common /OutputMore/ Output_avg
-
+      Integer :: InitialURead
+      common /LDInitial/ InitialURead
       TFLAG = 0
       IMuflag = 0
       Edec1 = Edec
@@ -4788,9 +4790,8 @@ C###############################################################################
       logical :: Output_avg      
       Common /TT0/ TT0   !T0
       Double Precision TT0
-      Double Precision event_phi2
       Common/event_angle/ event_phi2
-
+      Double Precision event_phi2
       Double Precision :: EdAvg, Pi00Avg, Pi01Avg, Pi02Avg
       Double Precision :: Pi03Avg, Pi11Avg, Pi12Avg, Pi22Avg
       Double Precision :: Pi33Avg
@@ -4816,30 +4817,27 @@ C###############################################################################
       VavX1=0.0
       VavY1=0.0
 C ************************J.Liu changes**********************************       
-       phi2 =0.0  
-       TXX=0.0
-       TYY=0.0
-       TXY =0.0
-       TXXP=0.0   !TX'X'
-       TYYP=0.0   !TY'Y'
+      TXX=0.0
+      TYY=0.0
+      TXY =0.0
+      TXXP=0.0   !TX'X'
+      TYYP=0.0   !TY'Y'
 
-       TTXY = 0.0
-       TTXX =0.0
-       TTYY =0.0
-       TTXXP=0.0  !TTX'X'
-       TTYYP=0.0
-
-       EpsP_full =0.0
-       EpsP1_full = 0.0 ! numerator of rotated momentum anisotropy
-       EpsP2_full = 0.0 ! denominator of rotated momentum anisotropy  
-       TEpsP_full =0.0     
-       TEpsP1_full = 0.0 ! numerator of rotated total momentum anisotropy 
-       TEpsP2_full = 0.0 ! denominator of rotated total momentum anisotropy
-
-       TEpsP_full_weighted =0.0     
-       TEpsP1_full_weighted = 0.0 ! numerator of rotated total momentum anisotropy 
-       TEpsP2_full_weighted = 0.0 ! denominator of rotated total momentum anisotropy 
-
+      TTXY = 0.0
+      TTXX =0.0
+      TTYY =0.0
+      TTXXP=0.0  !TTX'X'
+      TTYYP=0.0
+      
+      EpsP_full =0.0
+      EpsP1_full = 0.0 ! numerator of rotated momentum anisotropy
+      EpsP2_full = 0.0 ! denominator of rotated momentum anisotropy  
+      TEpsP_full =0.0     
+      TEpsP1_full = 0.0 ! numerator of rotated total momentum anisotropy 
+      TEpsP2_full = 0.0 ! denominator of rotated total momentum anisotropy
+      TEpsP_full_weighted =0.0     
+      TEpsP1_full_weighted = 0.0 ! numerator of rotated total momentum anisotropy 
+      TEpsP2_full_weighted = 0.0 ! denominator of rotated total momentum anisotropy 
 C find the center of the profile 
       XC = 0D0
       YC = 0D0
