@@ -295,6 +295,8 @@ C======output the chemical potential information at freeze out surface.====
       Open(3423, FILE='results/avg_points.dat',STATUS='REPLACE')
       open(3424, FILE='results/pi_avg_evo.dat',STATUS='REPLACE')
       end if
+
+      open(3429, FILE='results/bulkpi_check.dat',STATUS='REPLACE')
 ***************************J. Liu changes end*********************************
 
       !Open(3771,FILE='movie/DPc.dat',STATUS='REPLACE')
@@ -375,6 +377,7 @@ CSHEN======set up output file for hydro evolution history===================
       Close(3423)
       Close(3424)
       end if   
+      close(3429)
 ***************************J. Liu changes end*********************************
       End
 !-----------------------------------------------------------------------
@@ -2517,8 +2520,8 @@ CSHEN======end=================================================================
 
       If (VisBulk.ge.0.000001) then
         eta=ViscousC*Sd(i,j,k)
-        VBulk(i,j,k)=VisBulk*BulkAdSH0(eta,ttemp)
-        !VBulk(i,j,k) = ViscousZetasTemp(Ed(i,j,k)*HbarC)*Sd(i,j,k)
+        !VBulk(i,j,k)=VisBulk*BulkAdSH0(eta,ttemp)
+        VBulk(i,j,k) = ViscousZetasTemp(Ed(i,j,k)*HbarC)*Sd(i,j,k)
         !VBulk(i,j,k) = VisBulk !jia test
         If (IRelaxBulk.eq.0) then
           TTpi=DMax1(0.1d0, 120* VBulk(i,j,k)/DMax1(Sd(i,j,k),0.1d0))
@@ -4456,7 +4459,9 @@ C  output to file "pi_avg_evo.dat"
      &      sigma00_avg, sigma1122_avg, sigma01_avg, sigma02_avg,
      &      PPI_1st_avg, BulkRelxTime_avg, temp_inside, temp_all
         endif !output_avg
-
+        do 2599 I = NXPhy0, NXPhy           
+          write(3429,'(401e20.8)')(PPI(I, J, NZ0)*HbarC,J=NYPhy0, NYPhy)        
+2599    continue
 C ********************J.Liu changes end******************************************************    
 
       AMV=Hbarc*1000.0 !fm-1 change to MEV
