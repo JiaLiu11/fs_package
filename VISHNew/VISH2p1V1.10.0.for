@@ -296,7 +296,6 @@ C======output the chemical potential information at freeze out surface.====
       open(3424, FILE='results/pi_avg_evo.dat',STATUS='REPLACE')
       end if
 
-      open(3429, FILE='results/bulkpi_check.dat',STATUS='REPLACE')
 ***************************J. Liu changes end*********************************
 
       !Open(3771,FILE='movie/DPc.dat',STATUS='REPLACE')
@@ -377,7 +376,6 @@ CSHEN======set up output file for hydro evolution history===================
       Close(3423)
       Close(3424)
       end if   
-      close(3429)
 ***************************J. Liu changes end*********************************
       End
 !-----------------------------------------------------------------------
@@ -2522,7 +2520,7 @@ CSHEN======end=================================================================
         eta=ViscousC*Sd(i,j,k)
         !VBulk(i,j,k)=VisBulk*BulkAdSH0(eta,ttemp)
         VBulk(i,j,k) = ViscousZetasTemp(Ed(i,j,k)*HbarC)*Sd(i,j,k)
-        !VBulk(i,j,k) = VisBulk !jia test
+        !VBulk(i,j,k) = VisBulk*Sd(i,j,k) !jia test
         If (IRelaxBulk.eq.0) then
           TTpi=DMax1(0.1d0, 120* VBulk(i,j,k)/DMax1(Sd(i,j,k),0.1d0))
           VRelaxT0(i,j,k)=1.0/TTpi
@@ -4459,9 +4457,6 @@ C  output to file "pi_avg_evo.dat"
      &      sigma00_avg, sigma1122_avg, sigma01_avg, sigma02_avg,
      &      PPI_1st_avg, BulkRelxTime_avg, temp_inside, temp_all
         endif !output_avg
-        do 2599 I = NXPhy0, NXPhy           
-          write(3429,'(401e20.8)')(PPI(I, J, NZ0)*HbarC,J=NYPhy0, NYPhy)        
-2599    continue
 C ********************J.Liu changes end******************************************************    
 
       AMV=Hbarc*1000.0 !fm-1 change to MEV
@@ -4921,6 +4916,28 @@ c "Recenter" the profile: xx---->xx-XC
         EpsP=EpsP1/EpsP2  !Momentum  ellipticity
         TEpsP=TEpsP1/TEpsP2 ! total Momentum  ellipticity
 
+        if(abs(TEpsP)>100) then  !jia test
+          OPEN(3429,FILE='results/ux_check.dat',FORM='FORMATTED',
+     &        STATUS='REPLACE')  
+          OPEN(3430,FILE='results/uy_check.dat',FORM='FORMATTED',
+     &        STATUS='REPLACE')
+          OPEN(3431,FILE='results/ed_check.dat',FORM='FORMATTED',
+     &        STATUS='REPLACE')
+          OPEN(3432,FILE='results/pl_check.dat',FORM='FORMATTED',
+     &        STATUS='REPLACE')      
+          do 2599 I = NXPhy0, NXPhy           
+            write(3429,'(401e20.8)')(U0(I, J, NZ0),J=NYPhy0, NYPhy)  
+            write(3430,'(401e20.8)')(U1(I, J, NZ0),J=NYPhy0, NYPhy) 
+         write(3431,'(401e20.8)')(ED(I, J, NZ0)*HbarC,J=NYPhy0, NYPhy) 
+         write(3432,'(401e20.8)')(PL(I, J, NZ0)*HbarC,J=NYPhy0, NYPhy) 
+2599    continue
+          close(3429)
+          close(3430)
+          close(3431)
+          close(3432)
+          print*, 'Large epsilon_p Check completes!'
+          stop
+        endif
 C ***************************J.Liu changes*******************
 C find the momentum anisotropy and total momentum anisotropy after the rotation of profile 
       DO 1100 K=NZ0,NZ
