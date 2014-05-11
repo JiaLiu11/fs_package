@@ -4839,6 +4839,10 @@ C ************************J.Liu changes**********************************
       TEpsP_full_weighted =0.0     
       TEpsP1_full_weighted = 0.0 ! numerator of rotated total momentum anisotropy 
       TEpsP2_full_weighted = 0.0 ! denominator of rotated total momentum anisotropy 
+
+      TEpsP_inside = 0.0  ! count totoal momentum anisotropy for cells inside the freeze-out surface
+      TEpsP1_inside = 0.0
+      TEpsP2_inside = 0.0      
 C find the center of the profile 
       XC = 0D0
       YC = 0D0
@@ -4903,6 +4907,10 @@ c "Recenter" the profile: xx---->xx-XC
         TEpsP1=TEpsP1+(TTXX-TTYY)
         TEpsP2=TEpsP2+(TTXX+TTYY)
 
+        if(Ed(I,J,K)*HbarC>Edec) then
+          TEpsP1_inside = TEpsP1_inside+(TTXX-TTYY)
+          TEpsP2_inside = TEpsP2_inside+(TTXX+TTYY)
+        endif
         Vr=sqrt(Vx(I,J,K)**2+Vy(I,J,K)**2)
         Vaver1=Vaver1+Ed(I,J,K)*Vr*gamma   !*
         VavX1=VavX1+Ed(I,J,K)*Vx(I,J,K)*gamma   !*
@@ -4915,6 +4923,7 @@ c "Recenter" the profile: xx---->xx-XC
         EpsX=EpsX1/EpsX2  !spacial ellipticity
         EpsP=EpsP1/EpsP2  !Momentum  ellipticity
         TEpsP=TEpsP1/TEpsP2 ! total Momentum  ellipticity
+        TEpsP_inside = TEpsP1_inside/TEpsP2_inside
 
         if(abs(TEpsP)>100) then  !jia test
           OPEN(3429,FILE='results/ux_check.dat',FORM='FORMATTED',
@@ -5009,10 +5018,10 @@ C        write(*, *) Output_avg, ' ', total_points
         Pi33Avg = Pi33Avg/total_points*HbarC     
         EdAvg = TotalE/total_points*HbarC   ! unit: fm^-4-->GeV/fm^-3 
 
-        Write(3423,'(1f12.3, 13e20.8)') Time-TT0, EpsP,
+        Write(3423,'(1f12.3, 14e20.8)') Time-TT0, EpsP,
      &    EdAvg, Vaver, Pi00Avg, Pi01Avg, Pi02Avg, 
      &    Pi11Avg, Pi12Avg, Pi22Avg, Pi33Avg, EpsP_full,
-     &    TEpsP_full, TEpsP_full_weighted
+     &    TEpsP_full, TEpsP_full_weighted, TEpsP_inside
       end if
 C ***************************J.Liu changes end*******************
 
