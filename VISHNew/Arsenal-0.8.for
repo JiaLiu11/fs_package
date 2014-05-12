@@ -79,6 +79,7 @@
 
 
 
+
 ************************************************************************
       Subroutine interpLinear(table,tableSize,var0,dVar,varX,varResult)
 !     Purpose:
@@ -293,6 +294,128 @@
 
       End Subroutine
 !-----------------------------------------------------------------------
+
+
+
+************************************************************************
+      Subroutine invertFunctionH(func,varL,varR,acc,varResult)
+!     Newton/Bisect hybrid root search algorithm.
+!     Adapted from W.Press et.al. Numerical Recipies in C.
+!     Purpose:
+!       Return the varResult=func^-1(varX) using Newton method and Bisection.
+!
+!       -- func: double precision 1-argument function to be inverted
+!       -- varL: left boundary (for numeric derivative)
+!       -- varR: right boundary (for numeric derivative)
+!       -- varResult: the return inverted value
+!
+!   Solve: f(x)=0 with f(x)=table(x)-varX => f'(x)=table'(x)
+!
+      Implicit None
+
+!     declare input parameters
+      Double Precision func
+      Double Precision varL, varR, acc, varX, varResult
+      Double Precision dd ! step size of numerical derivative
+
+!     pre-fixed parameters
+      Double Precision accuracy
+      Integer tolerance
+
+!     declare local variables
+      Double Precision df, dx, dxold, f, fh, fl
+      Double Precision temp, xh, xl, rts ! intermedia variables
+      Integer impatience ! number of iterations
+      Double Precision numericalZero
+
+!     initialize parameters
+      accuracy = acc
+      tolerance = 60
+      impatience = 0
+      numericalZero = 1D-15
+      dd = DMAX1(1D-6,1D-3*abs(varR - varL))
+
+!     initial value, left and right point
+      fl = func(varL)
+      fh = func(varR)
+      if(fl*fh>0) then
+        print*, "invertFunctionH error!"
+        print*, "No solution at given boundary!"
+        stop
+      EndIf
+
+!     Check initial value is solution
+      if(abs(fl)<numericalZero) then
+        varResult = varL 
+        return
+      elseif (abs(fh)<numericalZero) then
+        varResult = varR
+        return
+      endif
+
+!     maintain f(xl)<0
+      if(fl < 0.0) then
+        xl = varL
+        xh = varR
+      else
+        xh = varL
+        xl = varR
+      EndIf
+
+!     Initial guess
+      rts = (xl+xh)/2.0
+      dxold = abs(varR-varL)
+      dx=dxold
+      f = func(rts)
+      df = (func(rts+dd) - func(rts-dd))/(2.0*dd)
+
+      Do While (impatience<tolerance)
+!     Apply Bisection if Newton shoots out of boundary or converges too slow
+        if((((rts-xh)*df-f)*((rts-xl)*df-f).ge.0.0)
+     &    .or. (abs(2.0*f) > abs(dxold*df))) then
+          dxold = dx
+          dx = 0.5*(xh-xl)
+          rts= xl+dx
+          if(abs(xl-rts)<numericalZero) then
+            varResult = rts
+            return
+          EndIf
+        else
+          dxold = dx
+          dx = f/df
+          temp = rts
+          rts = rts-dx
+          if(abs(temp-rts)<numericalZero) then
+            varResult = rts
+            return
+          EndIf
+        EndIf
+
+!       Converge criteria
+        if(abs(dx)<accuracy) then
+          varResult = rts
+          return
+        EndIf
+!       if not converge, calculate function and its derivative again
+        f = func(rts)
+        df = (func(rts+dd) - func(rts-dd))/(2.0*dd)
+!       maintain the bracket on the root
+        if(f<0.0) then
+          xl=rts
+        else
+          xh=rts
+        endif
+
+        impatience = impatience+1
+      EndDo
+
+      print*, "invertFunctionH error!"
+      print*, "reached maximum iteration but hadn't found root!"
+      stop 
+
+      End Subroutine
+!-----------------------------------------------------------------------
+
 
 
 ************************************************************************
