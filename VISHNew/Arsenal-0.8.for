@@ -273,7 +273,10 @@
         F3 = (F1-F2)/(X1-X2) ! derivative at XX1
 
         XX2 = XX1 - F0/F3 ! Newton's mysterious method
-
+!     maintain XX2 in the boundary
+        if(XX2.lt.varL) XX2=varL
+        if(XX2.gt.varR) XX2=varR
+        
         impatience = impatience + 1
         If (impatience>tolerance) Then
           Print *, "Subroutine invertFunctionD: ",
