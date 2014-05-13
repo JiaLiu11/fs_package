@@ -3490,6 +3490,7 @@ C-------------------------------------------
        double precision::temp_all, temp_inside ! Avg temperature for all cells / cells inside freeze-out surface
        double precision::temp_avg_num, temp_avg_den ! numerator and denominator to find temp_all
        Integer:: surf_counter
+       double precision::U0_guess ! predict the solution of U0 by the solution of VP_local
 ********************************J.Liu changes end**********************************
       ! ----- Use in root search -----
       Double Precision :: RSDM0, RSDM, RSPPI, RSee
@@ -3626,10 +3627,12 @@ C        U0_local = findU0Hook(0.0D0)
 C         Call invertFunctionD(findU0Hook, 1D0, 5D3, 1D-6, 1.0, 0D0, 
 C      &                       U0_local)
         VP_local = findvHook(0.0D0)
-        Call invertFunctionH(findvHook, 0.D0, 1.D0, 1D-6, VP_local)
-        u0_predict = 1.0/sqrt(1.0-VP_local**2.0+AAC)
+        Call invertFunctionH(findvHook, 0.D0, 1.D0, 0.D0, 1D-6, 
+     &    VP_local)
+        U0_guess = 1.0/sqrt(1.0-VP_local**2.0+AAC)
         U0_local = findU0Hook(0.0D0)
-        Call invertFunctionH(findU0Hook, 1D0, u0_predict*1.3, 1D-6, U0_local)
+        Call invertFunctionH(findU0Hook, DMAX1(1.D0, U0_guess*0.5),  
+     &    U0_guess*1.3, 0.D0, 1D-6, U0_local)
         
         U0_critial = 1.21061
         if(U0_local .gt. U0_critial) then
