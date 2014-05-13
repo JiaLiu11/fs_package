@@ -2517,10 +2517,10 @@ CSHEN======end=================================================================
       e3pep=(Ed(i,j,k)-3.0*PL(i,j,k))/(Ed(i,j,k)+PL(i,j,k))
 
       If (VisBulk.ge.0.000001) then
-        eta=ViscousC*Sd(i,j,k)
+        !eta=ViscousC*Sd(i,j,k)
         !VBulk(i,j,k)=VisBulk*BulkAdSH0(eta,ttemp)
-        VBulk(i,j,k) = ViscousZetasTemp(Ed(i,j,k)*HbarC)*Sd(i,j,k)
-        !VBulk(i,j,k) = VisBulk*Sd(i,j,k) !jia test
+        !VBulk(i,j,k) = ViscousZetasTemp(Ed(i,j,k)*HbarC)*Sd(i,j,k)
+        VBulk(i,j,k) = VisBulk*Sd(i,j,k) !jia test
         If (IRelaxBulk.eq.0) then
           TTpi=DMax1(0.1d0, 120* VBulk(i,j,k)/DMax1(Sd(i,j,k),0.1d0))
           VRelaxT0(i,j,k)=1.0/TTpi
