@@ -310,10 +310,11 @@
 !       -- func: double precision 1-argument function to be inverted
 !       -- varL: left boundary (for numeric derivative)
 !       -- varR: right boundary (for numeric derivative)
-!       -- varY: number to be inverted
+!       -- varY: value of the number to be inverted
+!       -- acc:  accuracy of solution
 !       -- varResult: the return inverted value
 !
-!   Solve: f(x)=0 with f(x)=table(x)-varX => f'(x)=table'(x)
+!   Solve: f(x)=varY with f(x)=table(x)-varX => f'(x)=table'(x)
 !
       Implicit None
 
@@ -345,6 +346,8 @@
       if(fl*fh>0) then
         print*, "invertFunctionH error!"
         print*, "No solution at given boundary!"
+        print*, varL, varR, varY
+        print*, fl, fh        
         stop
       EndIf
 

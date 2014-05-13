@@ -3631,8 +3631,8 @@ C      &                       U0_local)
      &    VP_local)
         U0_guess = 1.0/sqrt(1.0-VP_local**2.0+AAC)
         U0_local = findU0Hook(0.0D0)
-        Call invertFunctionH(findU0Hook, DMAX1(1.D0, U0_guess*0.5),  
-     &    U0_guess*1.3, 0.D0, 1D-6, U0_local)
+        Call invertFunctionH(findU0Hook, 1.D0,  
+     &    U0_guess*2.0, 0.D0, 1D-6, U0_local)
         
         U0_critial = 1.21061
         if(U0_local .gt. U0_critial) then
@@ -4938,9 +4938,10 @@ c "Recenter" the profile: xx---->xx-XC
         EpsX=EpsX1/EpsX2  !spacial ellipticity
         EpsP=EpsP1/EpsP2  !Momentum  ellipticity
         TEpsP=TEpsP1/TEpsP2 ! total Momentum  ellipticity
-        TEpsP_inside = TEpsP1_inside/TEpsP2_inside
+        If(isnan(TEpsP_inside)) TEpsP_inside=0.0 !end of hydro evolution, 
+                                                 !no points inside freezeout surface
 
-C         if(abs(TEpsP)>100) then  !jia test
+C         if(abs(TEpsP)>100) then  !jia test: whenever TEpsP is large
 C           OPEN(3429,FILE='results/ux_check.dat',FORM='FORMATTED',
 C      &        STATUS='REPLACE')  
 C           OPEN(3430,FILE='results/uy_check.dat',FORM='FORMATTED',
@@ -5318,7 +5319,6 @@ C----------------------------------------------------------------
 
       Double Precision :: RSDM0, RSDM, RSPPI, RSee
       Common /findEdHookData/ RSDM0, RSDM, RSPPI ! M0, M, Pi (see 0510014)
-
       Double Precision cstilde2 ! energy density from previous iteration, p/e, pressure
       ! Note that cstilde2 is NOT dp/de, but rather p/e!!!
 
