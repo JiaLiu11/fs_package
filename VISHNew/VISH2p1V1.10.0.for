@@ -4930,28 +4930,28 @@ c "Recenter" the profile: xx---->xx-XC
         TEpsP=TEpsP1/TEpsP2 ! total Momentum  ellipticity
         TEpsP_inside = TEpsP1_inside/TEpsP2_inside
 
-        if(abs(TEpsP)>100) then  !jia test
-          OPEN(3429,FILE='results/ux_check.dat',FORM='FORMATTED',
-     &        STATUS='REPLACE')  
-          OPEN(3430,FILE='results/uy_check.dat',FORM='FORMATTED',
-     &        STATUS='REPLACE')
-          OPEN(3431,FILE='results/ed_check.dat',FORM='FORMATTED',
-     &        STATUS='REPLACE')
-          OPEN(3432,FILE='results/pl_check.dat',FORM='FORMATTED',
-     &        STATUS='REPLACE')      
-          do 2599 I = NXPhy0, NXPhy           
-            write(3429,'(401e20.8)')(U0(I, J, NZ0),J=NYPhy0, NYPhy)  
-            write(3430,'(401e20.8)')(U1(I, J, NZ0),J=NYPhy0, NYPhy) 
-         write(3431,'(401e20.8)')(ED(I, J, NZ0)*HbarC,J=NYPhy0, NYPhy) 
-         write(3432,'(401e20.8)')(PL(I, J, NZ0)*HbarC,J=NYPhy0, NYPhy) 
-2599    continue
-          close(3429)
-          close(3430)
-          close(3431)
-          close(3432)
-          print*, 'Large epsilon_p Check completes!'
-          stop
-        endif
+C         if(abs(TEpsP)>100) then  !jia test
+C           OPEN(3429,FILE='results/ux_check.dat',FORM='FORMATTED',
+C      &        STATUS='REPLACE')  
+C           OPEN(3430,FILE='results/uy_check.dat',FORM='FORMATTED',
+C      &        STATUS='REPLACE')
+C           OPEN(3431,FILE='results/ed_check.dat',FORM='FORMATTED',
+C      &        STATUS='REPLACE')
+C           OPEN(3432,FILE='results/pl_check.dat',FORM='FORMATTED',
+C      &        STATUS='REPLACE')      
+C           do 2599 I = NXPhy0, NXPhy           
+C             write(3429,'(401e20.8)')(U0(I, J, NZ0),J=NYPhy0, NYPhy)  
+C             write(3430,'(401e20.8)')(U1(I, J, NZ0),J=NYPhy0, NYPhy) 
+C          write(3431,'(401e20.8)')(ED(I, J, NZ0)*HbarC,J=NYPhy0, NYPhy) 
+C          write(3432,'(401e20.8)')(PL(I, J, NZ0)*HbarC,J=NYPhy0, NYPhy) 
+C 2599    continue
+C           close(3429)
+C           close(3430)
+C           close(3431)
+C           close(3432)
+C           print*, 'Large epsilon_p Check completes!'
+C           stop
+C        endif
 C ***************************J.Liu changes*******************
 C find the momentum anisotropy and total momentum anisotropy after the rotation of profile 
       DO 1100 K=NZ0,NZ
