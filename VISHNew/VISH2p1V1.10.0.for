@@ -4340,7 +4340,7 @@ C-------------------------------------------------------------------------------
      &             +2.0*Pi02(I,J,K)**2 +2.0*Pi12(I,J,K)**2)/
      &                  (2.0*VCoefi(I,J,K)*Temp(I,J,K))
              end if
-             if(Visbulk.ge.0.00001.and.VBulk(I,J,K).ge.0.000001)then
+             if(Visbulk.ge.0.000001.and.VBulk(I,J,K).ge.0.000001)then
              Dsp2=Dsp2+(PPI(I,J,K)*PPI(I,J,K))/
      &                    (VBulk(I,J,K)*Temp(I,J,K))
              end if
