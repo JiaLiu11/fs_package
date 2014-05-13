@@ -335,7 +335,7 @@
       accuracy = acc
       tolerance = 60
       impatience = 0
-      numericalZero = 1D-15
+      numericalZero = 1D-18
       dd = DMAX1(1D-6,1D-3*abs(varR - varL))
 
 !     initial value, left and right point
@@ -400,6 +400,7 @@
           return
         EndIf
 !       if not converge, calculate function and its derivative again
+        dd = (xh - xl)/20.0
         f = func(rts)
         df = (func(rts+dd) - func(rts-dd))/(2.0*dd)
 !       maintain the bracket on the root

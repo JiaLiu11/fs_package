@@ -3285,7 +3285,7 @@ C###################################################################
       double precision cstilde2
       double precision M0, M
       double precision scaleFactor
-      double precision temp1
+      double precision temp1, temp2
 
       cstilde2 = PL/Ed
       T00 = dMax1(0.0d0, T00)
@@ -3296,11 +3296,15 @@ C###################################################################
         T01 = scaleFactor*T01
         T02 = scaleFactor*T02
       endif
-!     tackle too negative bulk pressure
-      if (BulkPi<-PL) BulkPi = -0.999*PL      
+
       temp1 = 2.*sqrt(cstilde2)*M - M0*(1.+cstilde2)
       if (BulkPi .lt. temp1) then
         BulkPi = temp1 + 1D-3*abs(temp1)
+      endif
+!     tackle too negative bulk pressure
+      temp2 = (M-M0)*(1+cstilde2)
+      if (BulkPi<temp2) then
+        BulkPi = 0.999*temp2     
       endif
       
       RETURN
@@ -3623,8 +3627,9 @@ C         Call invertFunctionD(findU0Hook, 1D0, 5D3, 1D-6, 1.0, 0D0,
 C      &                       U0_local)
         VP_local = findvHook(0.0D0)
         Call invertFunctionH(findvHook, 0.D0, 1.D0, 1D-6, VP_local)
+        u0_predict = 1.0/sqrt(1.0-VP_local**2.0+AAC)
         U0_local = findU0Hook(0.0D0)
-        Call invertFunctionH(findU0Hook, 1D0, 5D3, 1D-6, U0_local)
+        Call invertFunctionH(findU0Hook, 1D0, u0_predict*1.3, 1D-6, U0_local)
         
         U0_critial = 1.21061
         if(U0_local .gt. U0_critial) then
