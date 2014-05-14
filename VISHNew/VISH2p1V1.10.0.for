@@ -4337,8 +4337,8 @@ C-------------------------------------------------------------------------------
             if(Ed(I-1,J-1,K).ge. Edec1/HbarC)  then
              if(ViscousC>1D-6) then
               Dsp1=Dsp1+(Pi00(I,J,K)**2 +Pi11(I,J,K)**2 +Pi22(I,J,K)**2
-     &             +Pi33(I,J,K)**2 +2.0*Pi01(I,J,K)**2
-     &             +2.0*Pi02(I,J,K)**2 +2.0*Pi12(I,J,K)**2)/
+     &             +Pi33(I,J,K)**2 -2.0*Pi01(I,J,K)**2
+     &             -2.0*Pi02(I,J,K)**2 +2.0*Pi12(I,J,K)**2)/
      &                  (2.0*VCoefi(I,J,K)*Temp(I,J,K))
              end if
              if(Visbulk.ge.0.000001.and.VBulk(I,J,K).ge.0.000001)then
