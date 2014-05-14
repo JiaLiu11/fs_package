@@ -3286,7 +3286,8 @@ C###################################################################
       double precision M0, M
       double precision scaleFactor
       double precision temp1, temp2
-
+      double precision cstilde2_min !minimum value of PL/Ed, read from EOS_PST.dat
+      cstilde2_min = 4.31832000D-2
       cstilde2 = PL/Ed
       T00 = dMax1(0.0d0, T00)
       M0 = T00
@@ -3302,7 +3303,7 @@ C###################################################################
         BulkPi = temp1 + 1D-3*abs(temp1)
       endif
 !     tackle too negative bulk pressure
-      temp2 = (M-M0)*(1+cstilde2)
+      temp2 = (M-M0)*(1+cstilde2_min)  
       if (BulkPi<temp2) then
         BulkPi = 0.999*temp2     
       endif
@@ -5326,13 +5327,20 @@ C----------------------------------------------------------------
       Double Precision, Parameter :: HbarC=0.19733d0 !for changing between fm and GeV ! Hbarc=0.19733=GeV*fm
 
       Double Precision A ! temporary variables
-
+      Double Precision temp
       RSee = RSDM0 - v*RSDM
       cstilde2=PEPS(0.0d0, RSee*Hbarc)/dmax1(abs(RSee),zero)/Hbarc
       A=RSDM0*(1+cstilde2)+RSPPI
 
       findvHook = v - (2*RSDM)/(A + sqrt(dmax1(A*A 
      &                  - 4*cstilde2*RSDM*RSDM, 1D-30)) + 1D-30)
+      temp = 1 - (2*RSDM)/(A + sqrt(dmax1(A*A 
+     &                  - 4*cstilde2*RSDM*RSDM, 1D-30)) + 1D-30) 
+      if(temp<0) then
+        print*, "findvHook: error!"
+        print*, RSDM0, RSDM, RSPPI, cstilde2
+        print*, (RSDM- RSDM0)*(1+cstilde2)
+      EndIf        
       if(isnan(findvHook)) then
         print*, cstilde2, A, v
         print*, A*A - 4*cstilde2*RSDM*RSDM
