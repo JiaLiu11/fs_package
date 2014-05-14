@@ -4939,6 +4939,7 @@ c "Recenter" the profile: xx---->xx-XC
         EpsX=EpsX1/EpsX2  !spacial ellipticity
         EpsP=EpsP1/EpsP2  !Momentum  ellipticity
         TEpsP=TEpsP1/TEpsP2 ! total Momentum  ellipticity
+        TEpsP_inside = TEpsP1_inside/TEpsP2_inside
         If(isnan(TEpsP_inside)) TEpsP_inside=0.0 !end of hydro evolution, 
                                                  !no points inside freezeout surface
 
