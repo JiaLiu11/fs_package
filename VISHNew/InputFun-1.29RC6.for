@@ -8,7 +8,7 @@
 !-----------------------------------------------------------------------
 !   ToDos:
 !   -- Add debug symbol (and if's)
-!   -- Change many multiple-if's into single-line if
+!   -- Change many multiple-if's into single-line if'
 !   -- Allow reading parameters outPiMovieDt and regMethod from CML & file
 !   -- Add debug echo for parameters read from file
 !
@@ -66,10 +66,12 @@
       Double Precision maxBulkPiRatio ! used in tanh regulation method: Pi=Pi_max*tanh(Pi/Pi_max), Pi_max=maxPiRatio*(e+p)
       Common /maxBulkPiRatio/ maxBulkPiRatio
 
-      Integer checkE
-      Common /checkE/ checkE
       Integer InitialURead
       Common/LDInitial/ InitialURead  ! IintURead =1 read initial velocity profile
+
+      Integer checkE
+      Common /checkE/ checkE
+
 
 !----------GLOBALS-----------------------------------------------
       debug = 0
@@ -200,9 +202,10 @@
       Common /R0Bdry/ R0Bdry
       Integer LS
       Common /LS/ LS
-      
+
       Integer InitialURead
       Common/LDInitial/ InitialURead  ! IintURead =1 read initial velocity profile
+
       Integer QNum, ArgIndex ! QNum is the total number of arguments, ArgIndex gives the index to the one currently reading
 
       Integer Qkind
@@ -459,12 +462,13 @@
         NDX = 2
         NDY = 2     ! freeze-out step in x and y direction
         NDT = 5       ! freeze-out step in \tau direction
-        InitialURead = 1
+        InitialURead = 1 ! default: read in initial flow etc.
         Write (*,*) "Have:", "EOS=", IEOS, "Qkind=", Qkind, ! write out parameter for a check
      &    "Initialization=", IInit, "dT=", dT_1,
      &    "eta/s=",ViscousC,"b=",b,"Rx2=",Rx2,"Ry2=",Ry2,
      &    "EK=", EK, "tau0=", T0, "EDec=", EDec,
-     &    "LS=", LS, "R0Bdry", R0Bdry, "VisBeta=", VisBeta
+     &    "LS=", LS, "R0Bdry", R0Bdry, "VisBeta=", VisBeta,
+     &    "InitialURead=", InitialURead
 
 
       If (debug>=3) Print *, "* readInputFromCML finished"
@@ -522,13 +526,10 @@
       Double Precision sFactor ! multiplicity factor on entropy density
       Common /sFactor/ sFactor
 
-      Double Precision stopTime
-      Common /timeControl/ stopTime
-
       Double Precision event_phi2 ! phi2 of initial profile
       Common /event_angle/ event_phi2
       Integer InitialURead ! IintURead =1 read initial velocity profile
-      Common/LDInitial/ InitialURead  
+      Common/LDInitial/ InitialURead 
 
       Integer NDX, NDY, NDT
       Common /NXYTD/ NDX, NDY, NDT
@@ -557,7 +558,7 @@
       QNum = iargc ()
 
       sFactor = 1D0
-      event_phi2 =0D0
+      event_phi2 =0D0 ! default value of event plane phi_2
       Do ArgIndex = 1, QNum
         Call getarg(ArgIndex, buffer)
         Call processAssignment(buffer, "=", varName, IResult, DResult)
@@ -599,7 +600,6 @@
         If (varName=="factor") sFactor=DResult ! VER-1.29RC3: final multiplicity factor on entropy density
         If (varName=="fac") sFactor=DResult
         If (varName=="ff") sFactor=DResult
-        If (varName=="stoptime") stopTime=DResult ! hydro stop time
 
         If (varName=="b") b=DResult ! impact parameter
 
@@ -626,9 +626,10 @@
         If (varName=="ndy") NDY=IResult
         If (varName=="ndt") NDT=IResult
 
+        If (varName=="visbeta") VisBeta=DResult ! VisBeta, used for proper time tau_pi
+
         If (varName=="initialuread") InitialURead=DResult  ! read initial flows etc.
         If (varName=="visbulk") Visbulk=DResult ! bulk viscosity
-        If (varName=="visbeta") VisBeta=DResult ! VisBeta, used for proper time tau_pi
         If (varName=="event_angle") event_phi2=DResult ! phi2 of initial profile
       End Do ! ArgIndex
 
@@ -970,22 +971,12 @@
       Integer regMethod
       Common /regMethod/ regMethod
 
-      Double Precision :: Xsi0 = 10D0  !adaptive zero
+      Double Precision :: Xsi0 = 1D0  !adaptive zero
       Double Precision :: pressure_scale, bulkPi_scale
-      Double Precision regStrength, regStrength_dilute
+      Double Precision regStrength
+
       Double Precision maxBulkPiRatio
       Common /maxBulkPiRatio/ maxBulkPiRatio
-
-C ***********************J.Liu test******************************
-C Keep a record of regStrength
-      double Precision PPI_regStrength(NX0:NX, NY0:NY, NZ0:NZ) ! jia test
-
-      Logical :: Output_regulation, Output_avg    ! J.Liu: for CheckPiAll2() output
-      double precision::end_time
-      common /OutputMore/ Output_regulation, Output_avg
-      common /reg_output/ end_time
-
-C ***********************J.Liu test ends*************************
 
       Xsi0 = 1D-2/(regStr+1D0) ! VER-1.29RC: adaptive zero chooser VER-1.29RC4: bug fix: regStr -> regStr+1D0
 
@@ -1035,30 +1026,12 @@ C ***********************J.Liu test ends*************************
             Print*, "Xsi0=", Xsi0
           
           End If
-       End If !If (debug>=9)
+        End If !If (debug>=9)
 
         PPI(I,J,K)=PPI(I,J,K)*(tanh(regStrength)/regStrength) ! Bulk pressure PPI is regulated here
-        PPI_regStrength(I,J,K) = regStrength
 
 3018    Continue
 3019    Continue
-
-C ****************************J.Liu changes********************************
-C output profiles to check regulation
-       if(Time .lt. end_time .and. Output_regulation) then 
-         Open(3427,FILE="results/PPI_regStrength.dat",STATUS='OLD',
-     &     ACCESS='APPEND')
-         do I = NXPhy0, NXPhy           
-           write(3427,'(321e20.8)')(PPI_regStrength(I, J, NZ0),
-     &       J=NYPhy0, NYPhy)
-         enddo
-         Close(3427)
-         Open(3429,FILE="results/PPI_regTime.dat",STATUS='OLD',
-     &       ACCESS='APPEND')
-         write(3429,'(f10.3)') Time
-         Close(3429) 
-       EndIf
-C ****************************J.Liu changes end****************************
 
       EndIf ! on regMethod
 
@@ -1134,15 +1107,6 @@ C ****************************J.Liu changes end****************************
       Double Precision gamma_perp
 
       Double Precision PiTr, PiTrSum, trans
-      
-C ***********************J.Liu test******************************
-C Keep a record of regStrength
-      double Precision Pi_regStrength(NX0:NX, NY0:NY, NZ0:NZ) ! jia test
-
-      Logical :: Output_regulation, Output_avg    ! J.Liu: for CheckPiAll2() output
-      double precision::end_time
-      common /OutputMore/ Output_regulation, Output_avg
-      common /reg_output/ end_time
 
       Xsi0 = 1D-2/(regStr+1D0) ! VER-1.29RC: adaptive zero chooser VER-1.29RC4: bug fix: regStr -> regStr+1D0
 
@@ -1176,10 +1140,7 @@ C Keep a record of regStrength
         TrPi2 = p00*p00+p11*p11+p22*p22+p33*p33
      &    -2*p01*p01-2*p02*p02+2*p12*p12
         pi_scale = sqrt(abs(TrPi2)) + 1D-30
-        if(pi_scale .ne. pi_scale) then
-           print*, "Shear Pi is NaN, I,J =", I, J
-           stop
-        endif
+
         ! find regulation strength
 
         ! first, tracelessness
@@ -1300,10 +1261,7 @@ C Keep a record of regStrength
      &      +abs(Pi22(I,J,K))
      &      +abs(Pi33(I,J,K)))
 
-        PiCheckFlag = 1
-        If (PiAvg .ne. PiAvg) PiCheckFlag = 0
-
-        If (PiCheckFlag .eq. 0) Then
+        If (PiAvg .ne. PiAvg) Then
           Print *, "Invalid PiAvg"
           Print *, "(I,J,K)=",I,J,K
           Print *, "e=", Ed(I,J,K)
@@ -1320,29 +1278,11 @@ C Keep a record of regStrength
           Print *, "Pi33=", Pi33(I,J,K)
           Stop
         EndIf
-        Pi_regStrength(I,J,K) = regStrength ! jia test
- 3008   Continue
- 3009   Continue
+
+3008    Continue
+3009    Continue
 
       EndIf ! on regMethod
-
-C ****************************J.Liu changes********************************
-C output profiles to check regulation
-       if(Time .lt. end_time .and. Output_regulation) then 
-         Open(3428,FILE="results/PI_regStrength.dat",STATUS='OLD',
-     &     ACCESS='APPEND')
-         do I = NXPhy0, NXPhy           
-           write(3428,'(321e20.8)')(Pi_regStrength(I, J, NZ0),
-     &       J=NYPhy0, NYPhy)
-         enddo
-         Close(3428)
-      
-         Open(3430,FILE="results/PI_regTime.dat",STATUS='OLD',
-     &       ACCESS='APPEND')
-         write(3430,'(f10.3)') Time
-         Close(3430)        
-       EndIf
-C ****************************J.Liu changes end****************************
 
       If (debug>=3) Print *, "* RegulatePi finished"
 
