@@ -196,13 +196,13 @@ void LdMatching::MultiMatching(string filename)
   {
     ostringstream filename_stream_ux0;
     filename_stream_ux0.str("");
-    filename_stream_ux0 << Dst_Folder << "/ux_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
+    filename_stream_ux0 << Dst_Folder << "/ux_profile_kln" << ".dat";
     ostringstream filename_stream_uy0;
     filename_stream_uy0.str("");
-    filename_stream_uy0 << Dst_Folder << "/uy_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
+    filename_stream_uy0 << Dst_Folder << "/uy_profile_kln" << ".dat";
     ostringstream filename_stream_visRatio;
     filename_stream_visRatio.str("");
-    filename_stream_visRatio << Dst_Folder << "/visRatio_kln_tauf_" << Tau0+delta_tau << ".dat";
+    filename_stream_visRatio << Dst_Folder << "/visRatio_kln" << ".dat";
     // ostringstream filename_stream_Tmn;
     // filename_stream_Tmn << Dst_Folder << "/Tmn_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
     OutputVisRatio(filename_stream_visRatio.str().c_str());
@@ -267,13 +267,13 @@ void LdMatching::MultiMatching(string filename)
     {
       ostringstream filename_stream_ux;
       filename_stream_ux.str("");
-      filename_stream_ux << Dst_Folder << "/ux_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
+      filename_stream_ux << Dst_Folder << "/ux_profile_kl" << ".dat";
       ostringstream filename_stream_uy;
       filename_stream_uy.str("");
-      filename_stream_uy << Dst_Folder << "/uy_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
+      filename_stream_uy << Dst_Folder << "/uy_profile_kln" << ".dat";
       ostringstream filename_stream_visRatio;
       filename_stream_visRatio.str("");
-      filename_stream_visRatio << Dst_Folder << "/visRatio_kln_tauf_" << Tau0+delta_tau << ".dat";      
+      filename_stream_visRatio << Dst_Folder << "/visRatio_kln" << ".dat";      
       // ostringstream filename_stream_Tmn;
       // filename_stream_Tmn << Dst_Folder << "/Tmn_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
       OutputTable_ux(filename_stream_ux.str().c_str());
@@ -346,11 +346,11 @@ void LdMatching::MultiMatching(string filename)
     caldEdyd2rdphip(0);   //call free-streaming to shift table
     // output table
     ostringstream filename_stream_dEd2rdphipTable;
-    filename_stream_dEd2rdphipTable << Dst_Folder << "/dEdyd2rdphip_kln_tauf_" << Tau0 << ".dat";
+    filename_stream_dEd2rdphipTable << Dst_Folder << "/dEdyd2rdphip_kln"<< ".dat";
     OutputTable_3D(filename_stream_dEd2rdphipTable.str().c_str(), dEdyd2rdphipTable, Maxx, Maxy, phip_order);
 
     ostringstream filename_stream_dEdphipTable;
-    filename_stream_dEdphipTable << Dst_Folder << "/dEdydphip_kln_tauf_" << Tau0 << ".dat";
+    filename_stream_dEdphipTable << Dst_Folder << "/dEdydphip_kln" << ".dat";
     OutputTable_1D(filename_stream_dEdphipTable.str().c_str(), dEdydphipTable, phip_order);
     //clean up before leaving
     delete Streaming;    
@@ -376,11 +376,11 @@ void LdMatching::MultiMatching(string filename)
       Dst_Folder = dst_folder_stream.str();
       // output table
       filename_stream_dEd2rdphipTable.str("");
-      filename_stream_dEd2rdphipTable << Dst_Folder << "/dEd2rdphip_kln_tauf_" << Tau0+delta_tau << ".dat";
+      filename_stream_dEd2rdphipTable << Dst_Folder << "/dEd2rdphip_kln" << ".dat";
       OutputTable_3D(filename_stream_dEd2rdphipTable.str().c_str(), dEdyd2rdphipTable, Maxx, Maxy, phip_order);
 
       filename_stream_dEdphipTable.str("");
-      filename_stream_dEdphipTable << Dst_Folder << "/dEdydphip_kln_tauf_" << Tau0+delta_tau << ".dat";
+      filename_stream_dEdphipTable << Dst_Folder << "/dEdydphip_kln"  << ".dat";
       OutputTable_1D(filename_stream_dEdphipTable.str().c_str(), dEdydphipTable, phip_order);
       //clean up before leaving
       delete Streaming;       
@@ -776,7 +776,7 @@ void LdMatching::Matching_eig(const int nrap)
   {
     ostringstream filename_stream;
     filename_stream.str("");
-    filename_stream << Dst_Folder <<"/ed_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
+    filename_stream << Dst_Folder <<"/ed_profile_kln" << ".dat";
     OutputTable_ed(filename_stream.str().c_str(), 0);  
   }
 }
@@ -900,7 +900,7 @@ void LdMatching::CalPresTable(const int nrap)
   {
     ostringstream filename_stream;
     filename_stream.str("");
-    filename_stream << Dst_Folder << "/Pressure_kln_tauf_" << Tau0+delta_tau << ".dat";
+    filename_stream << Dst_Folder << "/Pressure_kln" << ".dat";
     OutputTable_pressure(filename_stream.str().c_str(), 0);      
   }
   //cout<<"Pressure table complete!----------------------------"<<endl<<endl;
@@ -951,7 +951,7 @@ void LdMatching::GenerateSdTable(const int nrap)
   {
     ostringstream filename_stream;
     filename_stream.str("");
-    filename_stream << Dst_Folder <<"/sd_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
+    filename_stream << Dst_Folder <<"/sd_profile_kln" << ".dat";
     OutputTable_Sd(filename_stream.str().c_str(), 0);  
   }
 }
@@ -1011,7 +1011,7 @@ void LdMatching::CalBulkVis(const int nrap)
   {
     ostringstream filename_stream;
     filename_stream.str("");
-    filename_stream << Dst_Folder << "/BulkPi_kln_tauf_" << Tau0+delta_tau << ".dat";
+    filename_stream << Dst_Folder << "/BulkPi_kln" << ".dat";
     OutputTable_BulkPi(filename_stream.str().c_str(), 0);      
   }
   //cout<<"Bulk viscosity table complete!"<<endl<<endl; 
@@ -1755,7 +1755,7 @@ void LdMatching::OutputTables_Pimn(const int iRap)
     {
       pi_tbl_stream.str("");
       pi_tbl_stream << Dst_Folder <<"/Pi" << ipii << ipij
-                    << "_kln_tauf_" << Tau0+delta_tau
+                    << "_kln" 
                     << ".dat" ;
       ofstream of;
       of.open(pi_tbl_stream.str().c_str(), std::ios_base::out);
@@ -1772,7 +1772,7 @@ void LdMatching::OutputTables_Pimn(const int iRap)
   //dump Pi33 table
   pi_tbl_stream.str(""); //clean filename for Pi33 table
   pi_tbl_stream << Dst_Folder << "/Pi" << 3 << 3
-              << "_kln_tauf_" << Tau0+delta_tau
+              << "_kln"
               << ".dat" ;
   ofstream of;
   of.open(pi_tbl_stream.str().c_str(), std::ios_base::out);
