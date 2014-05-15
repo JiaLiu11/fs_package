@@ -190,7 +190,7 @@ void LdMatching::MultiMatching(string filename)
   GenerateSdTable(); //ideal EOS is still under testing
   CalBulkVis();   //calculate Bulk Pi and output it
   CalShearVis();  //calculate shear Pi and output Pi tensor
-
+  CalVis2Ideal_Ratio();  //calculate ratio of sqrt(pi*pi)/sqrt(T_ideal*T_ideal)
   //output velocity profile
   if(outputData==true)
   {
@@ -200,10 +200,15 @@ void LdMatching::MultiMatching(string filename)
     ostringstream filename_stream_uy0;
     filename_stream_uy0.str("");
     filename_stream_uy0 << Dst_Folder << "/uy_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
+    ostringstream filename_stream_visRatio;
+    filename_stream_visRatio.str("");
+    filename_stream_visRatio << Dst_Folder << "/visRatio_kln_tauf_" << Tau0+delta_tau << ".dat";
     // ostringstream filename_stream_Tmn;
     // filename_stream_Tmn << Dst_Folder << "/Tmn_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
+    OutputVisRatio(filename_stream_visRatio.str().c_str());
     OutputTable_ux(filename_stream_ux0.str().c_str());
     OutputTable_uy(filename_stream_uy0.str().c_str());
+
     // OutputTmnTable(filename_stream_Tmn.str().c_str(), 0 , 0, 0);
   }
 
@@ -256,7 +261,7 @@ void LdMatching::MultiMatching(string filename)
     GenerateSdTable(); //ideal EOS is still under testing
     CalBulkVis();   //calculate Bulk Pi and output it
     CalShearVis();  //calculate shear Pi and output Pi tensor
-
+    CalVis2Ideal_Ratio();  //calculate ratio of sqrt(pi*pi)/sqrt(T_ideal*T_ideal)
     //output velocity profile
     if(outputData==true)
     {
@@ -266,10 +271,14 @@ void LdMatching::MultiMatching(string filename)
       ostringstream filename_stream_uy;
       filename_stream_uy.str("");
       filename_stream_uy << Dst_Folder << "/uy_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
+      ostringstream filename_stream_visRatio;
+      filename_stream_visRatio.str("");
+      filename_stream_visRatio << Dst_Folder << "/visRatio_kln_tauf_" << Tau0+delta_tau << ".dat";      
       // ostringstream filename_stream_Tmn;
       // filename_stream_Tmn << Dst_Folder << "/Tmn_profile_kln_tauf_" << Tau0+delta_tau << ".dat";
       OutputTable_ux(filename_stream_ux.str().c_str());
       OutputTable_uy(filename_stream_uy.str().c_str());
+      OutputVisRatio(filename_stream_visRatio.str().c_str());
       // OutputTmnTable(filename_stream_Tmn.str().c_str(), 0 , 0, 0);
     }
     event_phin = new double [phin_range];
@@ -1233,9 +1242,6 @@ void LdMatching::CalVis2Ideal_Ratio(const int iRap)
     of << endl;  //debug
   }
   of.close();
-  //cout<<"Ratio complete!"<<endl;
-  if(outputData==true)
-    Output4colTable_visratio("data/visideal_ratio_kln.dat", 0);
 }
 
 
@@ -1724,7 +1730,7 @@ void LdMatching::Output4colTable_ed(const char *filename, const int iRap)
 }
 
 
-void LdMatching::Output4colTable_visratio(const char *filename, const int iRap)
+void LdMatching::OutputVisRatio(const char *filename, const int iRap)
 {
   ofstream of;
   of.open(filename, std::ios_base::out | std::ios_base::app);                                  
@@ -1732,16 +1738,9 @@ void LdMatching::Output4colTable_visratio(const char *filename, const int iRap)
     for(int i=0;i<Maxx;i++)      
     {
       for(int j=0;j<Maxy;j++)
-      of  << delta_tau<<"   "
-          << Xmin+i*dx<<"   "
-          << Ymin+j*dy<<"   "
-          << scientific << setprecision(10) << setw(19) << DataTable->GetVisRatio(iRap, i, j)
-          <<endl;  //need revise
-      
+        of << scientific << setprecision(10) << setw(19) << DataTable->GetVisRatio(iRap, i, j);  
+      of << endl;    
     }
-
-  //cout<<"vis/ideal ratio table has been printed out for time Delta_Tau= "
-      // <<delta_tau<<" fm/c"<<endl<<endl;
   of.close();
 }
 
