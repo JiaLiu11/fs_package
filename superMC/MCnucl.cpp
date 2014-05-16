@@ -505,7 +505,7 @@ void MCnucl::getTA2()
 
 // --- initializes dN/dyd2rt (or dEt/...) on 2d grid for rapidity slice iy
 //     and integrates it to obtain dN/dy (or dEt/dy) ---
-void MCnucl::setDensity(int iy, int ipt)
+void MCnucl::setDensity(int iy, int ipt, int pt_order_mix)
 {
   // which_mc_model==1 -> KLN-like
   if (which_mc_model==1 && ipt>=0 && (dndydptTable==0)) {
@@ -515,12 +515,17 @@ void MCnucl::setDensity(int iy, int ipt)
   }
 
   // which_mc_model==1 -> KLN-like
-  if (which_mc_model==1 && ipt<0 && (dndyTable==0)) {
+  if (which_mc_model==1 && ipt<0 && (dndyTable==0) && pt_order_mix<=0) {
     cout <<
      "ERROR in MCnucl::setDensity() : pt-integrated yields require dndyTable !" << endl;
     exit(0);
   }
 
+  if (which_mc_model==1 && ipt<0 && (dndyTable==0) && pt_order_mix>0) {
+    cout <<
+     "ERROR in MCnucl::setDensity() : pt-integrated yields require dndyTable_app with pT_order=1!" << endl;
+    exit(0);
+  }
   double tblmax=0, table_result=0;
 
   rapidity=rapMin + (rapMax-rapMin)/binRapidity*iy;
@@ -545,9 +550,18 @@ void MCnucl::setDensity(int iy, int ipt)
         int i = floor(di); int j = floor(dj);
         if (ipt<0) // without pt dependence
         {
-          table_result = sixPoint2dInterp(di-i, dj-j, // x and y value, in lattice unit (dndyTable_step -> 1)
-          dndyTable[iy][i][j], dndyTable[iy][i][j+1], dndyTable[iy][i][j+2], dndyTable[iy][i+1][j], dndyTable[iy][i+1][j+1], dndyTable[iy][i+2][j]);
-          rho->setDensity(iy,ir,jr,table_result);
+          if(pt_order_mix<=0)
+          {
+            table_result = sixPoint2dInterp(di-i, dj-j, // x and y value, in lattice unit (dndyTable_step -> 1)            
+                dndyTable[iy][i][j], dndyTable[iy][i][j+1], dndyTable[iy][i][j+2], dndyTable[iy][i+1][j], dndyTable[iy][i+1][j+1], dndyTable[iy][i+2][j]);
+            rho->setDensity(iy,ir,jr,table_result);
+          }
+          else
+          {
+            table_result = sixPoint2dInterp(di-i, dj-j, // x and y value, in lattice unit (dndyTable_step -> 1)
+                dndyTable_app[iy][i][j], dndyTable_app[iy][i][j+1], dndyTable_app[iy][i][j+2], dndyTable_app[iy][i+1][j], dndyTable_app[iy][i+1][j+1], dndyTable[iy][i+2][j]);
+            rho->setDensity(iy,ir,jr,table_result);
+          }
         }
         else // with pt dependence
         {

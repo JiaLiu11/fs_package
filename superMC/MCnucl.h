@@ -97,7 +97,7 @@ public:
     void setRapidity(double y) {rapidity=y;}
     void generateNucleus(double b, OverLap* proj, OverLap* targ);
     void deleteNucleus();
-    void setDensity(int iy, int ipt); // ipt<0: no dN/dydpt table used
+    void setDensity(int iy, int ipt, int pt_order_mix=0); // ipt<0: no dN/dydpt table used
     void getTA2();
     int  getBinaryCollision();
     int  CentralityCut();
