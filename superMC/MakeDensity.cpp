@@ -72,6 +72,7 @@ MakeDensity::MakeDensity(ParameterReader *paraRdr_in)
   dpt = paraRdr->getVal("d_PT");
   MaxPT=(int)((PTmax-PTmin)/dpt+0.1)+1;
   MixedMode = paraRdr->getVal("mixedMode"); 
+  PT_order_mix = paraRdr->getVal("pT_order_mix"); 
 
   //operator option
   Operation = paraRdr->getVal("operation");
@@ -306,13 +307,24 @@ void MakeDensity::generate_profile_ebe(int nevent)
   char file1_4col[] = "data/sd_event_%d_4col.dat";
   char file1_block[] = "data/sd_event_%d_block.dat";
   char file1_5col[] = "data/sd_event_%d_5col.dat";
-  char file1_ptCol[] = "data/sd_event_%d_ptCol.dat";    
+  char file1_ptCol[] = "data/sd_event_%d_ptCol.dat";   
+  char file1_4col_app[] = "data/sd_event_%d_4col_particle.dat"; 
+  char file1_block_app[] = "data/sd_event_%d_block_particle.dat";   
   double *** dens1  = new double** [binRapidity];
   for(int iy=0;iy<binRapidity;iy++) {
     dens1[iy] =  new double* [Maxx]();
     for(int i=0;i<Maxx;i++) {
         dens1[iy][i] = new double[Maxy]();
         for (int j=0;j<Maxy;j++) dens1[iy][i][j]=0;
+    }
+  }
+
+  double *** dens1_app  = new double** [binRapidity];
+  for(int iy=0;iy<binRapidity;iy++) {
+    dens1_app[iy] =  new double* [Maxx]();
+    for(int i=0;i<Maxx;i++) {
+        dens1_app[iy][i] = new double[Maxy]();
+        for (int j=0;j<Maxy;j++) dens1_app[iy][i][j]=0;
     }
   }
 
@@ -333,6 +345,8 @@ void MakeDensity::generate_profile_ebe(int nevent)
   char file2_block[] = "data/ed_event_%d_block.dat";
   char file2_5col[] = "data/ed_event_%d_5col.dat";
   char file2_ptCol[] = "data/ed_event_%d_ptCol.dat";  
+  char file2_4col_app[] = "data/ed_event_%d_4col_particle.dat";
+  char file2_block_app[] = "data/ed_event_%d_block_particle.dat";  
   double *** dens2  = new double** [binRapidity];
   for(int iy=0;iy<binRapidity;iy++) {
     dens2[iy] =  new double* [Maxx]();
@@ -341,6 +355,15 @@ void MakeDensity::generate_profile_ebe(int nevent)
         for (int j=0;j<Maxy;j++) dens2[iy][i][j]=0;
     }
   }
+  double *** dens2_app  = new double** [binRapidity];
+  for(int iy=0;iy<binRapidity;iy++) {
+    dens2_app[iy] =  new double* [Maxx]();
+    for(int i=0;i<Maxx;i++) {
+        dens2_app[iy][i] = new double[Maxy];
+        for (int j=0;j<Maxy;j++) dens2_app[iy][i][j]=0;
+    }
+  }
+
   double **** dens2pt  = new double*** [binRapidity];
     for(int iy=0;iy<binRapidity;iy++) {
     dens2pt[iy] =  new double** [Maxx]();
@@ -404,7 +427,8 @@ void MakeDensity::generate_profile_ebe(int nevent)
     bool cutdSdypassFlag = true;
     if(PTinte>0)
     {
-      for(int iy=0;iy<binRapidity;iy++) {
+      for(int iy=0;iy<binRapidity;iy++) 
+      {
         mc->setDensity(iy, -1);
         // cut total entropy
         if(iy == 0 && cutdSdy == 1)
@@ -434,7 +458,7 @@ void MakeDensity::generate_profile_ebe(int nevent)
         // output energy profile
         if (use_ed)
         {
-          setEd(dens2, iy); // includes factor multiplication
+          setEd(dens2_app, iy); // includes factor multiplication
           if (use_4col)
             {
               sprintf(buffer,file2_4col,event);
@@ -447,14 +471,62 @@ void MakeDensity::generate_profile_ebe(int nevent)
             }
         }
       } // <-> for(int iy=0;iy<binRapidity;iy++)
-      /* comment the following lines to let dNdyTable and dNdydPtTable use the same configuration*/   
-      if(MixedMode<=0)   //keep the current configuration if need pT-unintegrated table
+    } //    if(PTinte>0)
+
+    if(PTinte>0 && PT_order_mix>0)
+    {
+      for(int iy=0;iy<binRapidity;iy++) 
       {
-        mc->deleteNucleus();
-        if(cutdSdypassFlag)
-          event++;
-      }
+        mc->setDensity(iy, -1, PT_order_mix);
+        // cut total entropy
+        if(iy == 0 && cutdSdy == 1)
+        {
+           double totaldSdy = gettotaldSdy(iy);
+           if(totaldSdy < cutdSdy_lowerBound || totaldSdy > cutdSdy_upperBound)
+           {
+              cutdSdypassFlag = false;
+              break;
+           }
+        }
+        // output entropy profile
+        if (use_sd)
+        {
+          setSd(dens1_app, iy); // includes factor multiplication
+          if (use_4col)
+            {
+              sprintf(buffer,file1_4col_app,event);
+              dumpDensity4Col(buffer, dens1_app, iy);
+            }
+          if (use_block)
+            {
+              sprintf(buffer,file1_block_app,event);
+              dumpDensityBlock(buffer, dens1_app, iy);
+            }
+        }
+        // output energy profile
+        if (use_ed)
+        {
+          setEd(dens2_app, iy); // includes factor multiplication
+          if (use_4col)
+            {
+              sprintf(buffer,file2_4col_app,event);
+              dumpDensity4Col(buffer, dens2_app, iy);
+            }
+          if (use_block)
+            {
+              sprintf(buffer,file2_block_app,event);
+              dumpDensityBlock(buffer, dens2_app, iy);
+            }
+        }
+      } // <-> for(int iy=0;iy<binRapidity;iy++)
   }// <-> if(PTinte>0) 
+  /* comment the following lines to let dNdyTable and dNdydPtTable use the same configuration*/   
+  if(PTinte>0 && MixedMode<=0)   //keep the current configuration if need pT-unintegrated table
+  {
+    mc->deleteNucleus();
+    if(cutdSdypassFlag)
+      event++;
+  }
 
   if((PTinte<0 or MixedMode>0) and cutdSdypassFlag)
   //calculate pT unintegrated particle distribution
@@ -511,10 +583,22 @@ void MakeDensity::generate_profile_ebe(int nevent)
   delete [] dens1;
 
   for(int iy=0;iy<binRapidity;iy++) {
+    for(int i=0;i<Maxx;i++) delete [] dens1_app[iy][i];
+    delete [] dens1_app[iy];
+  }
+  delete [] dens1_app;
+
+  for(int iy=0;iy<binRapidity;iy++) {
     for(int i=0;i<Maxx;i++) delete [] dens2[iy][i];
     delete [] dens2[iy];
   }
   delete [] dens2;
+
+  for(int iy=0;iy<binRapidity;iy++) {
+    for(int i=0;i<Maxx;i++) delete [] dens2_app[iy][i];
+    delete [] dens2_app[iy];
+  }
+  delete [] dens2_app;
 
 //clean up pt-dependence densities
   for(int iy=0;iy<binRapidity;iy++) {
