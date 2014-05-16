@@ -521,7 +521,7 @@ void MCnucl::setDensity(int iy, int ipt, int pt_order_mix)
     exit(0);
   }
 
-  if (which_mc_model==1 && ipt<0 && (dndyTable==0) && pt_order_mix>0) {
+  if (which_mc_model==1 && ipt<0 && (dndyTable_app==0) && pt_order_mix>0) {
     cout <<
      "ERROR in MCnucl::setDensity() : pt-integrated yields require dndyTable_app with pT_order=1!" << endl;
     exit(0);
