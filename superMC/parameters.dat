@@ -89,8 +89,8 @@ ecc_to_order = 9          # 9-> Calculate the eccentricity of the profile for ea
 # Print to File Optns
 use_sd = 1                # Boolean toggle to print the raw CGC and Glauber output 
                           # (CGC: gluon density; Glb: (1-alpha)/2*WN + alpha*BC) 
-use_ed = 1                # Boolean toggle to covert the entropy profile using the 
-                          # EOS and print the energy profile (do not use if Et=1)
+use_ed = 0                # Boolean toggle to covert the entropy profile using the 
+                          # EOS and print the energy profile (do not use if Et=1). This option does not support pT_order=2 or pT_order_mix=1 mode.
 use_4col = 0              # Boolean toggle to print 4 column format (rap, x, y, data)
 use_block = 1             # Boolean toggle to print matrix format (good for matlab)
 use_5col = 0              # Boolean toggle to print 5 column format (rap, x, y, pt, data)

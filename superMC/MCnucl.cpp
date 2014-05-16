@@ -748,7 +748,8 @@ int progress_counter = 0, progress_percent = 0, last_update = 0;
         else 
         { 
           dndyTable[iy][i][j] = 0.0;
-          dndyTable_app[iy][i][j] = 0.0;
+          if(PT_order_mix>0)
+            dndyTable_app[iy][i][j] = 0.0;
         }
       progress_counter++;
       progress_percent = (progress_counter*100) / (binRapidity*tmax*tmax);
