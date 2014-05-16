@@ -80,8 +80,8 @@ def totalEntrpyShell():
 	# calculate total entropy on the freeze-out surface
 	totalSd_FO = calculateTotalSFO(decdat2_tbl, EOS_tbl)
 	print 'total entropy on freeze-out surface: %10.8e'%totalSd_FO
-	totalSd_init = calculateTotoalSInit('VISHNew/Initial', 1.0, 0.01)
-	print 'total entropy at initial:%10.8e'%totalSd_init
+	#totalSd_init = calculateTotoalSInit('VISHNew/Initial', 1.0, 0.01)
+	#print 'total entropy at initial:%10.8e'%totalSd_init
 
 
 if __name__ == "__main__":

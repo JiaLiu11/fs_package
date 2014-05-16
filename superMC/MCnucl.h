@@ -35,13 +35,14 @@ protected:
     int tmax, tmaxPt;
     double dT;
     double ***dndyTable;
+    double ***dndyTable_app; //store particle number table
     double ****dndydptTable;
     double dndy;
     int Maxx,Maxy;
     int isKLN;
     double Xmin, Ymin, Xmax, Ymax;
     double PTinte, PTmax, PTmin, dpt, MaxPT;
-    int    PT_order;
+    int    PT_order, PT_order_mix, PT_order_app; //PT_order_app=1 for calculating total particle number
     double dx,dy;
     double siginNN, siginNN200;
     double rapidity;

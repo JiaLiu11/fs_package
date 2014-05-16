@@ -46,10 +46,16 @@ MCnucl::MCnucl(ParameterReader* paraRdr_in)
   PTinte = paraRdr->getVal("PT_flag");
   PTmax  = paraRdr->getVal("PT_Max");
   PTmin  = paraRdr->getVal("PT_Min");
+  PT_order_mix = paraRdr->getVal("PT_order_mix");
   dpt = paraRdr->getVal("d_PT");
   MaxPT=(int)((PTmax-PTmin)/dpt+0.1)+1;
   if(PTinte<0)
-      PT_order = paraRdr->getVal("PT_order");   
+      PT_order = paraRdr->getVal("PT_order");  
+  else if(PTinte<0 and PT_order_mix>0) 
+      {
+        PT_order = paraRdr->getVal("PT_order"); 
+        PT_order_app = 1;  //do pt order=1 integration along with order=2.
+      }
   else
       PT_order = 1; //does not apply when there is no PT integration
 
@@ -92,6 +98,7 @@ MCnucl::MCnucl(ParameterReader* paraRdr_in)
 
 
   dndyTable=0;    // lookup table pointers not valid yet
+  dndyTable_app=0;
   dndydptTable=0;
   overSample=1;  // default: no oversampling
   binRapidity = paraRdr->getVal("ny");
@@ -137,6 +144,14 @@ MCnucl::~MCnucl()
       delete [] dndyTable[iy];
     }
     delete [] dndyTable;
+  }
+
+  if(dndyTable_app) {
+    for(int iy=0;iy<binRapidity;iy++) {
+      for(int j=0;j<tmax;j++) delete [] dndyTable_app[iy][j];
+      delete [] dndyTable_app[iy];
+    }
+    delete [] dndyTable_app;
   }
 
   if(dndydptTable) {
@@ -701,6 +716,12 @@ void MCnucl::makeTable()
     for(int j=0;j<tmax;j++) dndyTable[iy][j] = new double [tmax];
   }
 
+  dndyTable_app = new double** [binRapidity];
+  for(int iy=0;iy<binRapidity;iy++) {
+    dndyTable_app[iy] = new double* [tmax];
+    for(int j=0;j<tmax;j++) dndyTable_app[iy][j] = new double [tmax];
+  }
+
 int progress_counter = 0, progress_percent = 0, last_update = 0;
 //===========================================================================
   for(int iy=0;iy<binRapidity;iy++) { // loop over rapidity bins
@@ -713,11 +734,20 @@ int progress_counter = 0, progress_percent = 0, last_update = 0;
         if(i>0 && j>0) {  // store corresponding dN/dy in lookup table
           // small-x gluons via kt-factorization
           dndyTable[iy][i][j] = kln->getdNdy(y,ta1,ta2, -1, PT_order); 
+          dndyTable_app[iy][i][j] = kln->getdNdy(y,ta1,ta2, -1, PT_order_app); 
           // add large-x partons via DHJ formula if required
           if (val)
+          {
             dndyTable[iy][i][j] += val->getdNdy(y,ta1,ta2);
+            dndyTable_app[iy][i][j] += val->getdNdy(y,ta1,ta2);
+          }
           //cout << ta1 << ", " << ta2 << ", " << dndyTable[iy][i][j] << endl;
-        } else dndyTable[iy][i][j] = 0.0;
+        } 
+        else 
+        { 
+          dndyTable[iy][i][j] = 0.0;
+          dndyTable_app[iy][i][j] = 0.0;
+        }
       progress_counter++;
       progress_percent = (progress_counter*100) / (binRapidity*tmax*tmax);
       if(((progress_percent%10) == 0) && (progress_percent != last_update))
@@ -765,7 +795,6 @@ void MCnucl::makeTable(double ptmin, double dpt, int iPtmax)
         dndydptTable[iy][j][i] = new double [iptmax];
     }
   }
-
 
 int progress_counter = 0, progress_percent = 0, last_update = 0;
 //===========================================================================
