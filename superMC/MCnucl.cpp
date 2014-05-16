@@ -46,19 +46,19 @@ MCnucl::MCnucl(ParameterReader* paraRdr_in)
   PTinte = paraRdr->getVal("PT_flag");
   PTmax  = paraRdr->getVal("PT_Max");
   PTmin  = paraRdr->getVal("PT_Min");
-  PT_order_mix = paraRdr->getVal("PT_order_mix");
+  PT_order_mix = paraRdr->getVal("pT_order_mix");
   dpt = paraRdr->getVal("d_PT");
   MaxPT=(int)((PTmax-PTmin)/dpt+0.1)+1;
-  if(PTinte<0)
+
+  if(PTinte>0 and PT_order_mix<=0)
       PT_order = paraRdr->getVal("PT_order");  
-  else if(PTinte<0 and PT_order_mix>0) 
+  else if(PTinte>0 and PT_order_mix>0) 
       {
         PT_order = paraRdr->getVal("PT_order"); 
         PT_order_app = 1;  //do pt order=1 integration along with order=2.
       }
   else
       PT_order = 1; //does not apply when there is no PT integration
-
   //.... NN cross sections in mb
   double ecm = paraRdr->getVal("ecm");
   double sig = hadronxsec::totalXsection(200.0,0);
@@ -732,14 +732,16 @@ int progress_counter = 0, progress_percent = 0, last_update = 0;
       for(int j=0;j<tmax;j++) { // loop over targ thickness
         double ta2 = dT*j;
         if(i>0 && j>0) {  // store corresponding dN/dy in lookup table
-          // small-x gluons via kt-factorization
+          // small-x gluons via kt-factorization       
           dndyTable[iy][i][j] = kln->getdNdy(y,ta1,ta2, -1, PT_order); 
-          dndyTable_app[iy][i][j] = kln->getdNdy(y,ta1,ta2, -1, PT_order_app); 
+          if(PT_order_mix>0)
+            dndyTable_app[iy][i][j] = kln->getdNdy(y,ta1,ta2, -1, PT_order_app, PT_order_mix); 
           // add large-x partons via DHJ formula if required
           if (val)
           {
             dndyTable[iy][i][j] += val->getdNdy(y,ta1,ta2);
-            dndyTable_app[iy][i][j] += val->getdNdy(y,ta1,ta2);
+            if(PT_order_mix>0)
+              dndyTable_app[iy][i][j] += val->getdNdy(y,ta1,ta2);
           }
           //cout << ta1 << ", " << ta2 << ", " << dndyTable[iy][i][j] << endl;
         } 
@@ -763,6 +765,8 @@ int progress_counter = 0, progress_percent = 0, last_update = 0;
   cout << "MCnucl::makeTable(): done" << endl << endl;
 
   dumpdNdyTable4Col("data/dNdyTable.dat", dndyTable, 0);
+  if(PT_order_mix>0)
+    dumpdNdyTable4Col("data/dNdyTable_app.dat", dndyTable_app, 0);
 }
 
 

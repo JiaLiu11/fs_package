@@ -35,7 +35,7 @@ protected:
     int tmax, tmaxPt;
     double dT;
     double ***dndyTable;
-    double ***dndyTable_app; //store particle number table
+    double ***dndyTable_app; //store particle number table with PT_order_app=1
     double ****dndydptTable;
     double dndy;
     int Maxx,Maxy;
