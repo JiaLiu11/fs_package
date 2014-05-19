@@ -864,7 +864,7 @@ void MakeDensity::generate_profile_average(int nevent)
           // average entropy profile
           if (use_sd)
           {
-              mc->rotateGrid(iy, order); // rotate grid according to gluon density <-> according to entropy density. Note that different rapidity slices are rotated separately, and this does not quite make sense.
+              mc->rotateGrid(iy, order); // line*A*: rotate grid according to gluon density <-> according to entropy density. Note that different rapidity slices are rotated separately, and this does not quite make sense.
               mc->getTA2();
               mc->setDensity(iy, -1); // now it's after rotation
               setSd(dens_tmp, iy); // includes factor multiplication
@@ -917,6 +917,9 @@ void MakeDensity::generate_profile_average(int nevent)
       if(PTinte > 0 && PT_order_mix>0)  // for integrated-pt, and mix mode
       {
         for(int iy=0;iy<binRapidity;iy++) {
+          // nucleon positions have been changed in the line*A*, the density we have on next line share the same 
+          // nucleon profile (or TA2()) as the rotated one in the above section. This is equivalent to one more rotation.
+          // This does not matter for averging over a large amount of events.
           mc->setDensity(iy, -1, PT_order_mix);
           // cut total entropy density
           if(iy == 0 && cutdSdy == 1)
