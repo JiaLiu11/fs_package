@@ -11,17 +11,17 @@ from os import path, stat, getcwd
 import numpy as np
 from subprocess import call
 
-sfactor_list = np.loadtxt('sfactor_log.dat')
 rootDir = getcwd()
 fs_location = path.join(rootDir, 'fs')
 fs_particle_location = path.join(rootDir, 'fs_particle')
 table_location = path.join(rootDir, 'tables')
+sfactor_list = np.loadtxt(path.join(table_location,'sfactor_log.dat'))
 
 def generatePartonNumFromLm(datafile, event_num, tau0, taumin, taumax, dtau):
     """
-	Use free-streaming and matching code to process parton pT^1 file and dump the dNdydphi file.
-	Return: success code or fail code.
-	"""
+    Use free-streaming and matching code to process parton pT^1 file and dump the dNdydphi file.
+    Return: success code or fail code.
+    """
     # get data file and copy it to fs_folder
     fs_init_folder = path.join(fs_particle_location, 'data', 'events')
     fs_init_file = path.join(fs_init_folder, 'sd_event_%d_block.dat' % event_num)
@@ -42,9 +42,9 @@ def generatePartonNumFromLm(datafile, event_num, tau0, taumin, taumax, dtau):
 
 def calculatePartonMeanPT(event_num, tau_s, edinit_file, sfactor, Edec, dxdy=0.01):
     """
-	calculate mean pT of un-thermalized partons.
-	Return: (mean pT, total number) of massless particles.
-	"""
+    calculate mean pT of un-thermalized partons.
+    Return: (mean pT, total number) of massless particles.
+    """
     # identify necessary files
     dptd2rdphi_file = path.join(fs_location, 'data', 'result', 'event_%d'%event_num, '%g'%tau_s, 'dEd2rdphip_kln.dat')
     dnd2rdphi_file = path.join(fs_particle_location, 'data', 'result', 'event_%d'%event_num, '%g'%tau_s,\
@@ -80,9 +80,9 @@ def calculatePartonMeanPT(event_num, tau_s, edinit_file, sfactor, Edec, dxdy=0.0
 
 def calculateParticleMeanPT(particle_idx, dpT_tbl, pTweight_tbl, targetFolder):
     """
-	calculate the mean pT of a thermal particle.
-	return: (mean pT, total number) of a thermal particle, 
-	"""
+    calculate the mean pT of a thermal particle.
+    return: (mean pT, total number) of a thermal particle, 
+    """
     # read in particle dN/(dyptdpt2\pi) table
     fileName = path.join(targetFolder, 'thermal_%d_vndata.dat' % particle_idx)
     try:
@@ -101,9 +101,9 @@ def calculateParticleMeanPT(particle_idx, dpT_tbl, pTweight_tbl, targetFolder):
 
 def readParticleNum(particle_idx, targetFolder):
     """
-	read particle number from file.
-	return: total particle number
-	"""
+    read particle number from file.
+    return: total particle number
+    """
     fileName = path.join(targetFolder, 'thermal_%d_integrated_vndata.dat' % particle_idx)
     try:
         particle_data = np.loadtxt(fileName)
@@ -116,8 +116,8 @@ def readParticleNum(particle_idx, targetFolder):
 
 def meanPTCalculatorShell():
     event_num = 99
-    particle_file = path.join('superMC','data', 'result', 'sd_event_%d_block_particle.dat'%event_num)
-    #generatePartonNumFromLm(particle_file, event_num, 0.01, 1, 2, 1)
+    particle_file = path.join('superMC','data', 'sd_event_%d_block_particle.dat'%event_num)
+    generatePartonNumFromLm(particle_file, event_num, 0.01, 1, 10, 1)
     print '     tau_s     total pT      total num      mean pT'
     for tau_s in range(1, 3):
         edinit_file = path.join('fs','data','result','event_%d'%event_num, '%g'%tau_s,'ed_profile_kln.dat')
