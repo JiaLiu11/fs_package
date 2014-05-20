@@ -7,7 +7,7 @@
 #   May 19, 2014     first version
 
 import sys, shutil
-from os import path, stat, getcwd
+from os import path, stat, getcwd, stat
 import numpy as np
 from subprocess import call
 
@@ -16,6 +16,7 @@ fs_location = path.join(rootDir, 'fs')
 fs_particle_location = path.join(rootDir, 'fs_particle')
 table_location = path.join(rootDir, 'tables')
 sfactor_list = np.loadtxt(path.join(table_location,'sfactor_log.dat'))
+matchingTime_list = np.linspace(1, 10, 10)
 
 def generatePartonNumFromLm(datafile, event_num, tau0, taumin, taumax, dtau):
     """
@@ -77,28 +78,7 @@ def calculatePartonMeanPT(event_num, tau_s, edinit_file, sfactor, Edec, dxdy=0.0
     
     return (dptdy, dndy)
 
-
-def calculateParticleMeanPT(particle_idx, dpT_tbl, pTweight_tbl, targetFolder):
-    """
-    calculate the mean pT of a thermal particle.
-    return: (mean pT, total number) of a thermal particle, 
-    """
-    # read in particle dN/(dyptdpt2\pi) table
-    fileName = path.join(targetFolder, 'thermal_%d_vndata.dat' % particle_idx)
-    try:
-        particle_data = np.loadtxt(fileName)
-    except:
-        print 'dEcounters: calculateParticleMeanPT() error!'
-        print 'Cannot read in particle file: ' + fileName
-        sys.exit(-1)
-    dndyptdpt_2pi_tbl = particle_data[:, 2]
-    # get total particle number
-    total_num = readParticleNum(particle_idx, targetFolder)
-    # get particle pt
-    total_pt = (dndyptdpt_2pi_tbl * dpT_tbl * dpT_tbl * pTweight_tbl * 2.0 * np.pi).sum()
-    return (total_pt, total_num)
-
-
+################################################################################################
 def readParticleNum(particle_idx, targetFolder):
     """
     read particle number from file.
@@ -114,16 +94,71 @@ def readParticleNum(particle_idx, targetFolder):
     return particle_data[0, 1]
 
 
+def calculateParticleMeanPT(particle_idx, pT_tbl, pTweight_tbl, targetFolder):
+    """
+    calculate the mean pT of a thermal particle.
+    return: (mean pT, total number) of a thermal particle, 
+    """
+    # find out if hydro ran
+    decdat2_file = path.join(targetFolder, 'decdat2.dat')
+    if(stat(decdat2_file).st_size==0):  # empty decdat2 file, hydro did not run
+        return (0, 0)   
+    # read in particle dN/(dyptdpt2\pi) table
+    fileName = path.join(targetFolder, 'thermal_%d_vndata.dat' % particle_idx)
+    try:
+        particle_data = np.loadtxt(fileName)
+    except:
+        print 'dEcounters: calculateParticleMeanPT() error!'
+        print 'Cannot read in particle file: ' + fileName
+        sys.exit(-1)
+    dndyptdpt_2pi_tbl = particle_data[:, 2]
+    # get total particle number
+    total_num = readParticleNum(particle_idx, targetFolder)
+    # get particle pt
+    total_pt = (dndyptdpt_2pi_tbl * pT_tbl * pT_tbl * pTweight_tbl * 2.0 * np.pi).sum()
+    return (total_pt, total_num)
+
+
+
+def getPionPT(dpT_tbl, pTweight_tbl, is_result_folder):
+    """
+    get mean pT of all three kinds of pions.
+    Input: tau_s, folder to the event 
+    Return: total pT, total pion number
+    """
+    pion_MC_list = [211, 111,-211] # Monte-Carlo number of pion+, pion0, pion-
+    total_pt = 0
+    total_num = 0
+    for pion_kind in pion_MC_list:
+        pion_folder = is_result_folder
+        pion_pt, pion_num = calculateParticleMeanPT(pion_kind, dpT_tbl, pTweight_tbl, pion_folder)
+        total_pt = total_pt + pion_pt
+        total_num = total_num + pion_num
+    return (total_pt, total_num)
+
+
 def meanPTCalculatorShell():
+    # prepare integration table
+    pt_tbl_file = path.join(rootDir, 'iS/tables', 'pT_gauss_table.dat')
+    pt_tbl = np.loadtxt(pt_tbl_file)
+
     event_num = 99
     particle_file = path.join('superMC','data', 'sd_event_%d_block_particle.dat'%event_num)
-    generatePartonNumFromLm(particle_file, event_num, 0.01, 1, 10, 1)
-    print '     tau_s     total pT      total num      mean pT'
-    for tau_s in range(1, 3):
+    #generatePartonNumFromLm(particle_file, event_num, 0.01, \
+    #    matchingTime_list[0], matchingTime_list[-1], matchingTime_list[1]-matchingTime_list[0])
+    print '%    tau_s     total parton pT      total parton num      total pion pT      total pion num        mean pT'
+    for tau_s in matchingTime_list:
+        # get parton pT
         edinit_file = path.join('fs','data','result','event_%d'%event_num, '%g'%tau_s,'ed_profile_kln.dat')
         sfactor = (sfactor_list[sfactor_list[:,0]==tau_s])[0,1]
-        totalpt, totalnum = calculatePartonMeanPT(event_num, tau_s, edinit_file, sfactor, 0.18)
-        print "%8.2f \t %10.6e \t %10.6e \t %10.6e"%(tau_s, totalpt, totalnum, totalpt/totalnum)
+        parton_totalpt, parton_totalnum = calculatePartonMeanPT(event_num, tau_s, edinit_file, sfactor, 0.18)
+        # get pion pT
+        is_data_folder = path.join(rootDir, 'localdataBase', 'event_%d'%event_num,'%g'%tau_s)
+        pion_totalpt, pion_totalnum = getPionPT(pt_tbl[:,0], pt_tbl[:,1],is_data_folder)
+
+        meanPT_all = (parton_totalpt+pion_totalpt)/(parton_totalnum+pion_totalnum)
+        print "%8.2f \t %10.6e \t %10.6e \t %10.6e \t %10.6e \t %10.6e"%(tau_s, parton_totalpt, parton_totalnum, \
+            pion_totalpt, pion_totalnum, meanPT_all)
 
 if __name__ == "__main__":
     meanPTCalculatorShell()
