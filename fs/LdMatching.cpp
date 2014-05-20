@@ -267,7 +267,7 @@ void LdMatching::MultiMatching(string filename)
     {
       ostringstream filename_stream_ux;
       filename_stream_ux.str("");
-      filename_stream_ux << Dst_Folder << "/ux_profile_kl" << ".dat";
+      filename_stream_ux << Dst_Folder << "/ux_profile_kln" << ".dat";
       ostringstream filename_stream_uy;
       filename_stream_uy.str("");
       filename_stream_uy << Dst_Folder << "/uy_profile_kln" << ".dat";
