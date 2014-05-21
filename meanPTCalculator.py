@@ -146,7 +146,7 @@ def meanPTCalculatorShell():
     particle_file = path.join('superMC','data', 'sd_event_%d_block_particle.dat'%event_num)
     #generatePartonNumFromLm(particle_file, event_num, 0.01, \
     #    matchingTime_list[0], matchingTime_list[-1], matchingTime_list[1]-matchingTime_list[0])
-    print '%    tau_s     total parton pT      total parton num      total pion pT      total pion num        mean pT'
+    print '%    tau_s     total parton pT  total parton num total pion pT  total pion num    mean pT'
     for tau_s in matchingTime_list:
         # get parton pT
         edinit_file = path.join('fs','data','result','event_%d'%event_num, '%g'%tau_s,'ed_profile_kln.dat')
