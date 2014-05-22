@@ -451,10 +451,10 @@ def runcodeShell():
     run LandauMatching, Hydro, iS consequently and move the data files.
     """
     ##  run superMC and move the inital KLN profiles to fs folder
-    #runsuperMC(events_total)
-    #MCbackupDirectory = path.join(backupDir, 'MCevents')
-    #backupMCdata(superMCResultDirectory, MCbackupDirectory)
-    #moveMCdata2Lm(superMCResultDirectory, lmInitDirectory)
+    runsuperMC(events_total)
+    MCbackupDirectory = path.join(backupDir, 'MCevents')
+    backupMCdata(superMCResultDirectory, MCbackupDirectory)
+    moveMCdata2Lm(superMCResultDirectory, lmInitDirectory)
     
     #   loop over the matching time
     for event_number in event_num_list:
