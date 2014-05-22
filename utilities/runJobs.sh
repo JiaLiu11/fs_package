@@ -1,4 +1,5 @@
 #! /usr/bin/env bash
+# Put this file in the parent folder of main/
 
 here=$(pwd)
 
@@ -11,7 +12,6 @@ fi
 for i in $(eval echo "{1..$1}"); do
 
 	cd $here
-	rm -rf $here/nodes/node$i
 	cp -r -a $here/main $here/nodes/node$i
 	cd $here/nodes/node$i
 

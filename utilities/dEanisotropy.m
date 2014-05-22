@@ -1,5 +1,6 @@
 % Calculate anisotropies from azimuthally energy distribution dEdydphip
 % tables from various events.
+% Path: should be put in the parent folder of main/.
 
 % Author:   Jia Liu, liu.2053@osu.edu
 
@@ -12,7 +13,7 @@ tic
 % Specify the info for running
 nodes_list = 1:10;
 events_list = 1:40;   %number of events in one node
-tau =1:4:10;     %matching time list
+tau =1:1:10;     %matching time list
 tau0 = 0.01;           %inital time of free-streaming
 order_list = 2:3;  % anisotropy order list
 
