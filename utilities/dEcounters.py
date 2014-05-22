@@ -26,7 +26,7 @@ import numpy as np
 Edec = 0.18  #Unit: GeV/fm^3
 dxdy = 0.01
 # table locations
-rootDir = getcwd()
+rootDir = path.abspath('..')
 tables_location = path.join(rootDir, 'tables')
 
 def  dEdydphipSigmaThermal(dEdyd2rdphipFile, edFile, sfactor, \
