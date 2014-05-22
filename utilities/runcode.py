@@ -36,10 +36,10 @@ import dEcounters
 
 event_num_list = range(1, 41)
 events_total = len(event_num_list)
-matching_time_list = [2,3,4,6,7,8,10]
+matching_time_list = np.linspace(1, 10, 10)
 pre_process_decdat2_file = True
 sys_start_time = 0.01
-
+enableSkipEvent = True
 
 angle_phi2 = 0.0
 norm_factor = 1.0
@@ -179,7 +179,7 @@ def getEventAngle(angle_order):
     return epxAngle_now
 
 
-def runHydro(mth_time, hydro_dir, inital_phi):
+def runHydro(mth_time, hydro_dir, inital_phi, success=True):
     """
     run hydro code to get the freeze-out surface
     """
@@ -195,10 +195,10 @@ def runHydro(mth_time, hydro_dir, inital_phi):
     retcode = call(hydro_cmd, shell=True, cwd=hydro_dir)
     # check if hydro excuted successfully
     if retcode ==0:
-      print 'Hydro evolution completes!'
+        print 'Hydro evolution completes!'
     else :
-      print 'Hydro stops unexpectly!\n'
-      sys.exit(-1)
+        print 'Hydro stops unexpectly!\n'
+        sys.exit(-1)
     # check if hydro finishes
     runlog_file = path.join(hydro_dir,'runlog.dat')
     logEndLine = popen("tail -n 1 %s" %runlog_file).read() #
@@ -207,10 +207,11 @@ def runHydro(mth_time, hydro_dir, inital_phi):
         pass
     else:
         print 'Hydro did not run to the end!'
-        sys.exit(-1)
+        success = False
     # backup the hydro run log
     shutil.copy(path.join(hydroDirectory, 'runlog.dat'),  \
         path.join(hydroResultDirectory, 'runlog.dat')) 
+    return
 
 
 
@@ -489,11 +490,18 @@ def runcodeShell():
             global norm_factor
             norm_factor = getSfactor(matching_time)
             angle_phi2 = getEventAngle(2)
-            runHydro(matching_time, hydroDirectory, angle_phi2)
+            runHydro(matching_time, hydroDirectory, angle_phi2, successCode)
+            # skip the current event
+            if successCode == False and enableSkipEvent == True:
+            	break
+            elif successCode == False and enableSkipEvent == False:
+            	print 'runcode: hydro does not finish successfully!'
+            	print 'at event %d'%event_number + ', matching time %6.2f'%matching_time
+            	sys.exit(-1)
             cleanUpFolder(iSDataDirectory)
             moveHydroData2iS(hydroResultDirectory, iSDataDirectory)
 
-            #run iS to get the anisotrpy flow
+            #run iS to get the anisotropy flow
             decdat_file = path.join(iSDataDirectory, 'decdat2.dat')
             if(stat(decdat_file).st_size==0) :
                 print 'decdat.dat is empty!\n'
