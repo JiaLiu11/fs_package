@@ -29,9 +29,9 @@ output=1                             # 1: output all data tables; 2: only output
 
 # Matching time option
 tau0  =0.01                          # Initial time of free-streaming
-taumin=0.2                           # Minimum value of matching time in fm/c
-taumax=0.2                           # Max value of matching time in fm/c
-dtau  =0.1                           # Step size in mathing time in fm/c
+taumin=1.0                           # Minimum value of matching time in fm/c
+taumax=10.0                          # Max value of matching time in fm/c
+dtau  =1.0                           # Step size in mathing time in fm/c
 
 
 
