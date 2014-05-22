@@ -43,9 +43,8 @@ sys_start_time = 0.01
 
 angle_phi2 = 0.0
 norm_factor = 1.0
-sfactor_list = np.loadtxt('sfactor_log.dat')  #load in scale factor
 
-rootDir = getcwd()  #define the root folder
+rootDir = path.abspath('..')  #define the root folder
 
 #define the data folder of superMC
 superMCDirectory = path.join(rootDir, 'superMC')
@@ -65,8 +64,10 @@ iSDirectory = path.join(rootDir, 'iS')
 iSDataDirectory = path.join(iSDirectory, 'results')
 
 backupDirName = rootDir.split('/')[-1] # get the name of the current node
-backupDir = path.join('..','..', 'dataBase', backupDirName)
+backupDir = path.join('..','..','..', 'dataBase', backupDirName)
+tablesLocation = path.join(rootDir, 'tables')
 
+sfactor_list = np.loadtxt(path.join(tablesLocation,'sfactor_log.dat')) #load in scale factor
 
 
 
