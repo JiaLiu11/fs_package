@@ -13,6 +13,8 @@ import time
 import shutil
 import dEcounters
 
+rootDir = runcode.rootDir
+backupDir = path.join(rootDir, 'localdataBase')
 totaldEdyExpect = 1599.4  #from single-shot viscous hydro starting at 0.6fm/c, thermal pion+ num 210.
 event_number = 99
 mtime_list = linspace(1, 4, 4) 
@@ -61,13 +63,13 @@ def getTotaldEdyOnly(dEdyd2rdphipFile, edFile, sfactor, dEdydphipthermFolder, \
 def adjustSfactorShell():
 	""" use as main program
 	"""
-	sfactor_log = open('sfactor_log.dat', 'a')
+	sfactor_log = open(path.join(rootDir,'sfactor_log.dat'), 'a')
 	sfactor_log.write("#Matching Time         sfactor                 totaldEdy  \n")
 
         for matching_time in mtime_list:
     	    #Prepare the data for hydro run
-    	    rescale_factor = 6.0
-    	    rescale_factor_used = 6.0
+    	    rescale_factor = 9.0
+    	    rescale_factor_used = 9.0
             lmDataDirectory = path.join(runcode.lmDirectory, 'data/result/event_' \
                                         + str(event_number)+"/"+ "%g" %matching_time)
             runcode.cleanUpFolder(runcode.hydroInitialDirectory)
@@ -102,8 +104,8 @@ def adjustSfactorShell():
 			edFile = path.join(runcode.hydroInitialDirectory, 'ed_profile_kln.dat')
 
 			totaldEdyTest = getTotaldEdyOnly(dEdyd2rdphipFile, edFile, runcode.norm_factor, \
-				runcode.iSDataDirectory, 'dEdydphip_therm.dat',\
-				runcode.iSDirectory, runcode.iSDataDirectory, 'dEdydphip_fo.dat')   
+				runcode.iSDataDirectory, 'dEdydphipThermal.dat',\
+				runcode.iSDirectory, runcode.iSDataDirectory, 'dEdydphipFO.dat')   
 
 	  	#Keep a log	
 		sfactor_log.write("%6.2f       %20.8f        %20.4f\n"   \
@@ -118,7 +120,7 @@ def adjustSfactorShell():
 	   	    #backup the run files
 	   	    event_folder_tag = 'event_' + '%g' %event_number 
                     sub_folder_tag = '%g' %matching_time
-		    data_backup_dir = path.join(runcode.backupDir, \
+		    data_backup_dir = path.join(backupDir, \
           	       event_folder_tag, sub_folder_tag)
 		    runcode.backupEachRun(runcode.iSDataDirectory, data_backup_dir)
 		    print 'Current run completed for event ' + str(event_number) 
