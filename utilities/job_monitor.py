@@ -20,7 +20,10 @@ def getJobProcess(node_num):
     """	
     currentFolder = path.join(dataBaseDir, "node"+str(node_num))
     fileNames = listdir(currentFolder)
-    fileNames.remove('Epx_initial.dat')  # eliminates additional names
+    try:
+        fileNames.remove('Epx_initial.dat')  # eliminates additional names
+    except:
+        pass
     fileNames.remove('MCevents')
     fileNames = [items.replace('event_', '') for items in fileNames]
     fileNames = map(int, fileNames)
