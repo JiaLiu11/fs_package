@@ -39,7 +39,7 @@ events_total = len(event_num_list)
 matching_time_list = np.linspace(1, 10, 10)
 pre_process_decdat2_file = True
 sys_start_time = 0.01
-enableSkipEvent = True
+enableSkipEvent = False
 
 angle_phi2 = 0.0
 norm_factor = 1.0
@@ -179,7 +179,7 @@ def getEventAngle(angle_order):
     return epxAngle_now
 
 
-def runHydro(mth_time, hydro_dir, inital_phi, success=True):
+def runHydro(mth_time, hydro_dir, inital_phi):
     """
     run hydro code to get the freeze-out surface
     """
@@ -204,14 +204,14 @@ def runHydro(mth_time, hydro_dir, inital_phi, success=True):
     logEndLine = popen("tail -n 1 %s" %runlog_file).read() #
     logWord = logEndLine.split()[0]
     if logWord == 'Finished':
-        pass
+        success = True
     else:
         print 'Hydro did not run to the end!'
         success = False
     # backup the hydro run log
     shutil.copy(path.join(hydroDirectory, 'runlog.dat'),  \
         path.join(hydroResultDirectory, 'runlog.dat')) 
-    return
+    return success
 
 
 
@@ -490,7 +490,7 @@ def runcodeShell():
             global norm_factor
             norm_factor = getSfactor(matching_time)
             angle_phi2 = getEventAngle(2)
-            runHydro(matching_time, hydroDirectory, angle_phi2, successCode)
+            successCode = runHydro(matching_time, hydroDirectory, angle_phi2)
             # skip the current event
             if successCode == False and enableSkipEvent == True:
             	break
