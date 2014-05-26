@@ -11,11 +11,10 @@ from os import path, stat, getcwd, stat
 import numpy as np
 from subprocess import call
 
-rootDir = getcwd()
+rootDir = path.abspath('..')  #since this script is in fs_package/utilities/
 fs_location = path.join(rootDir, 'fs')
 fs_particle_location = path.join(rootDir, 'fs_particle')
 table_location = path.join(rootDir, 'tables')
-sfactor_list = np.loadtxt(path.join(table_location,'sfactor_log.dat'))
 matchingTime_list = np.linspace(1, 10, 10)
 
 def generatePartonNumFromLm(datafile, event_num, tau0, taumin, taumax, dtau):
@@ -41,7 +40,7 @@ def generatePartonNumFromLm(datafile, event_num, tau0, taumin, taumax, dtau):
     return
 
 
-def calculatePartonMeanPT(event_num, tau_s, edinit_file, sfactor, Edec, dxdy=0.01):
+def calculatePartonMeanPT(event_num, tau_s, sfactor, Edec, dxdy=0.01):
     """
     calculate mean pT of un-thermalized partons.
     Return: (mean pT, total number) of massless particles.
@@ -50,12 +49,13 @@ def calculatePartonMeanPT(event_num, tau_s, edinit_file, sfactor, Edec, dxdy=0.0
     dptd2rdphi_file = path.join(fs_location, 'data', 'result', 'event_%d'%event_num, '%g'%tau_s, 'dEd2rdphip_kln.dat')
     dnd2rdphi_file = path.join(fs_particle_location, 'data', 'result', 'event_%d'%event_num, '%g'%tau_s,\
         'dEd2rdphip_kln.dat')
+    edinit_file = path.join(fs_location, 'data', 'result', 'event_%d'%event_num, '%g'%tau_s, 'ed_profile_kln.dat')
     phipTbl = np.loadtxt(path.join(table_location,'phip_gauss_table.dat'))  #100 points Gaussian points table for phip integration.
-    try:
+    if (path.isfile(dptd2rdphi_file) and path.isfile(dnd2rdphi_file) and path.isfile(edinit_file)):
         dptd2rdphi_data = np.loadtxt(dptd2rdphi_file)
         dnd2rdphi_data = np.loadtxt(dnd2rdphi_file)
         ed_data = np.loadtxt(edinit_file)
-    except:
+    else:
         print 'meanPTCalculator: calculatePartonMeanPT() error!'
         print 'No parton data file!'
         sys.exit(-1)
@@ -141,17 +141,17 @@ def meanPTCalculatorShell():
     # prepare integration table
     pt_tbl_file = path.join(rootDir, 'iS/tables', 'pT_gauss_table.dat')
     pt_tbl = np.loadtxt(pt_tbl_file)
+    sfactor_list = np.loadtxt(path.join(table_location,'sfactor_log.dat'))
 
     event_num = 99
-    particle_file = path.join('superMC','data', 'sd_event_%d_block_particle.dat'%event_num)
+    particle_file = path.join(rootDir,'superMC','data', 'sd_event_%d_block_particle.dat'%event_num)
     #generatePartonNumFromLm(particle_file, event_num, 0.01, \
     #    matchingTime_list[0], matchingTime_list[-1], matchingTime_list[1]-matchingTime_list[0])
     print '%    tau_s     total parton pT  total parton num total pion pT  total pion num    mean pT'
     for tau_s in matchingTime_list:
         # get parton pT
-        edinit_file = path.join('fs','data','result','event_%d'%event_num, '%g'%tau_s,'ed_profile_kln.dat')
         sfactor = (sfactor_list[sfactor_list[:,0]==tau_s])[0,1]
-        parton_totalpt, parton_totalnum = calculatePartonMeanPT(event_num, tau_s, edinit_file, sfactor, 0.18)
+        parton_totalpt, parton_totalnum = calculatePartonMeanPT(event_num, tau_s, sfactor, 0.18)
         # get pion pT
         is_data_folder = path.join(rootDir, 'localdataBase', 'event_%d'%event_num,'%g'%tau_s)
         pion_totalpt, pion_totalnum = getPionPT(pt_tbl[:,0], pt_tbl[:,1],is_data_folder)
