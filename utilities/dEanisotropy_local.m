@@ -1,18 +1,21 @@
 % Calculate anisotropies from azimuthally energy distribution dEdydphip
 % tables from various events.
-% Path: should be put in the parent folder of main/.
 
 % Author:   Jia Liu, liu.2053@osu.edu
+%%%%%%%%%%LOCAL VERSION%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Only take care one node.
 
 % History: 
+%May,14, 2014  Local version. Modified to deal with results of
+%adjustsfactor ouput.
 % Jan. 27, 2014 First version.
 
 % Have a clean start
 clear all
 tic 
 % Specify the info for running
-nodes_list = 1:10;
-events_list = 1:40;   %number of events in one node
+nodes_list = [1];
+events_list = [99];   %number of events in one node: 99 for ensemble averaged event
 tau =1:1:10;     %matching time list
 tau0 = 0.01;           %inital time of free-streaming
 order_list = 2:3;  % anisotropy order list
@@ -46,9 +49,8 @@ end
 % prepare data file names
 rootDir = fileparts(pwd()); %parent floder of the current directory
 tableDir = fullfile(rootDir, 'tables');
-dataBaseDir = fullfile(rootDir, 'dataBase');
-eventDataDir = fullfile(dataBaseDir, 'node%d', 'event_%d', '%g') ;
-eccnInitDir = fullfile(dataBaseDir, 'node%d');
+dataBaseDir = fullfile(rootDir, 'localdataBase');
+eventDataDir = fullfile(dataBaseDir, 'event_%d', '%g') ;
 
 % read in phip Gaussian Table:
 phip_th = load(fullfile(tableDir,'phip_gauss_table.dat'));  %100 points Gaussian table, (phip, w(phip))
@@ -57,22 +59,20 @@ phip_fo = load(fullfile(tableDir, 'phi_gauss_table.dat'));  %48 points Gaussian 
 % Loop over nodes
 events_count = 1;
 for i=1:nodes_total
-    % load in initial eccentricity file
-    eccn_init_file = fullfile(sprintf(eccnInitDir, nodes_list(i)), 'Epx_initial.dat');
-    eccn_init_data = load(eccn_init_file);
-    eccn_init_data = eccn_init_data(1:length(events_list), :);   % suppose this node hasn't been finished.
     % Loop over events per node
     for j=1:length(events_list);
         for k=1:mtimes_total
-            eventDataDir_now = sprintf(eventDataDir, nodes_list(i), events_list(j), tau(k));
+            eventDataDir_now = sprintf(eventDataDir, events_list(j), tau(k));
             dEdydphip_th_file =  fullfile(eventDataDir_now, 'dEdydphipThermal.dat'); 
             dEdydphip_fo_file = fullfile(eventDataDir_now, 'dEdydphipFO.dat');
             % safty check: both file must exists
             if(exist(dEdydphip_th_file, 'file')==0)
+                disp(['Matching time: ',num2str(tau(k))]);
                 disp(['File does not exist: ', 'dEdydphipThermal.dat']);
                 return
             elseif(exist(dEdydphip_fo_file, 'file')==0)
-                 %disp(['File does not exist: ', 'dEdydphipFO.dat']);
+                 disp(['Matching time: ',num2str(tau(k))]);
+                 disp(['File does not exist: ', 'dEdydphipFO.dat']);
                  dEdydphip_fo_data = zeros(length(phip_fo),1);  
             else
                 dEdydphip_fo_data = load(dEdydphip_fo_file);               
@@ -84,8 +84,6 @@ for i=1:nodes_total
             wn_fo_denominator_tbl(events_count, k) = sum(dEdydphip_fo_data.*phip_fo(:,2)); 
             % Loop over all orders
             for iorder=1:orders_total
-                %eccn_phin = eccn_init_data(j, 2+2*(order_list(iorder)+1)); % applies to new 'Epx_initial.dat' format.
-                eccn_phin = eccn_init_data(j, 3+order_list(iorder));  % only applies to old 'Epx_initial.dat' and only ecc2 and ecc3 are there.
                 eccn_phin = 0 ;%debug
                 
                 wn_th_numerator_real = sum(dEdydphip_th_data.*cos(order_list(iorder).*phip_th(:,1)-eccn_phin).*phip_th(:,2));
