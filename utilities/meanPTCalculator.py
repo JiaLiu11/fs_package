@@ -18,8 +18,7 @@ fs_location = path.join(rootDir, 'fs')
 fs_particle_location = path.join(rootDir, 'fs_particle')
 is_location = path.join(rootDir, 'iS')
 table_location = path.join(rootDir, 'tables')
-#matchingTime_list = np.linspace(1, 10, 10)
-matchingTime_list = [1,2]
+matchingTime_list = np.linspace(1, 10, 10)
 # some constants
 photon_degeneracy = 2.0
 gluon_degeneracy = 8.0
@@ -106,12 +105,18 @@ def calculatePartonMeanPT(event_num, tau_s, sfactor, Edec, dxdy=0.01):
     
     return (dptdy, dndy)
 
+
 ################################################################################################
 def runiSGetPhoton(data_location):
     """
     re-run iS only to find the photon pT spectra
     return: success code or fail code
     """
+    # find out if hydro ran
+    decdat2_file = path.join(data_location, 'decdat2.dat')
+    if(stat(decdat2_file).st_size==0):  # empty decdat2 file, hydro did not run
+        return 
+
     iS_EOS_location = path.join(is_location, 'EOS')
     # backup the choosen_particles table
     choosen_particles_table_original = path.join(iS_EOS_location, 'chosen_particles.dat')
@@ -136,7 +141,7 @@ def runiSGetPhoton(data_location):
     iS_cmd = is_location + "/./iS.e >runlog.dat"
     retcode = call(iS_cmd, shell=True, cwd=is_location)
     if retcode ==0:
-      print 'iS completes!'
+      pass
     else :
       print 'iS stops unexpectly!\n'
       sys.exit(-1)
@@ -204,6 +209,17 @@ def getPhotonPT(dpT_tbl, pTweight_tbl, is_result_folder):
     return (total_pt, total_num)
 
 
+def cleanfsResultFolders():
+    """
+    clean the fs results folder for this mean pt run.
+    """
+    fs_result_location = path.join(fs_location, 'data','result')
+    fs_particle_result_location = path.join(fs_particle_location, 'data','result')
+    shutil.rmtree(fs_result_location)
+    shutil.rmtree(fs_particle_result_location)
+    return
+
+
 def meanPTCalculatorShell():
     # prepare integration table
     pt_tbl_file = path.join(rootDir, 'iS/tables', 'pT_gauss_table.dat')
@@ -222,7 +238,7 @@ def meanPTCalculatorShell():
     generatePartonEnergyFromLm(energy_file, event_num, 0.01, \
         matchingTime_list[0], matchingTime_list[-1], matchingTime_list[1]-matchingTime_list[0])
     print 'fs code finished!'
-    
+
     print '%    tau_s     total parton pT  total parton num total pion pT  total pion num    mean pT'
     for tau_s in matchingTime_list:
         # get parton pT
@@ -231,12 +247,14 @@ def meanPTCalculatorShell():
         # get photon pT
         is_data_folder = path.join(rootDir, 'localdataBase', 'event_%d'%event_num,'%g'%tau_s)
         runiSGetPhoton(is_data_folder)
-        pion_totalpt, pion_totalnum = getPionPT(pt_tbl[:,0], pt_tbl[:,1],is_data_folder)
+        photon_pt, photon_totalnum = getPhotonPT(pt_tbl[:,0], pt_tbl[:,1],is_data_folder)
         # consider the degenercy of gluon and photon
-        meanPT_all = (parton_totalpt/gluon_degeneracy+pion_totalpt/photon_degeneracy)\
-        /(parton_totalnum/gluon_degeneracy+pion_totalnum/photon_degeneracy)
+        meanPT_all = (parton_totalpt/gluon_degeneracy+photon_pt/photon_degeneracy)\
+        /(parton_totalnum/gluon_degeneracy+photon_totalnum/photon_degeneracy)
         print "%8.2f \t %10.6e \t %10.6e \t %10.6e \t %10.6e \t %10.6e"%(tau_s, parton_totalpt, parton_totalnum, \
-            pion_totalpt, pion_totalnum, meanPT_all)
+            photon_pt, photon_totalnum, meanPT_all)
+    # clean the temp files before leaving
+    cleanfsResultFolders()
 
 if __name__ == "__main__":
     meanPTCalculatorShell()
