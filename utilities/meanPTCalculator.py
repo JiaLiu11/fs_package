@@ -18,7 +18,7 @@ fs_location = path.join(rootDir, 'fs')
 fs_particle_location = path.join(rootDir, 'fs_particle')
 is_location = path.join(rootDir, 'iS')
 table_location = path.join(rootDir, 'tables')
-matchingTime_list = np.linspace(1, 10, 10)
+matchingTime_list = np.linspace(0.4,1.8,8)
 # some constants
 photon_degeneracy = 2.0
 gluon_degeneracy = 8.0
@@ -199,7 +199,7 @@ def getPhotonPT(dpT_tbl, pTweight_tbl, is_result_folder):
     """
     This is the shell of function calculateParticleMeanPT(). It gets mean pT of photon. 
     Input: tau_s, folder to the event 
-    Return: total pT, total pion number
+    Return: total pT, total photon number
     """
     photon_MC_idx = 22 # Monte-Carlo number of photon
     total_pt = 0
@@ -209,14 +209,16 @@ def getPhotonPT(dpT_tbl, pTweight_tbl, is_result_folder):
     return (total_pt, total_num)
 
 
-def cleanfsResultFolders():
+def cleanfsResultFolders(event_num):
     """
     clean the fs results folder for this mean pt run.
     """
-    fs_result_location = path.join(fs_location, 'data','result')
-    fs_particle_result_location = path.join(fs_particle_location, 'data','result')
-    shutil.rmtree(fs_result_location)
-    shutil.rmtree(fs_particle_result_location)
+    fs_result_location = path.join(fs_location, 'data','result','event_%d'%event_num)
+    fs_particle_result_location = path.join(fs_particle_location, 'data', 'result', 'event_%d'%event_num)
+    if path.isdir(fs_result_location):
+        shutil.rmtree(fs_result_location)
+    if path.isdir(fs_particle_result_location):
+        shutil.rmtree(fs_particle_result_location)
     return
 
 
@@ -239,7 +241,7 @@ def meanPTCalculatorShell():
         matchingTime_list[0], matchingTime_list[-1], matchingTime_list[1]-matchingTime_list[0])
     print 'fs code finished!'
 
-    print '%    tau_s     total parton pT  total parton num total pion pT  total pion num    mean pT'
+    print '%    tau_s     total parton pT  total parton num totalphoton pT  totalphoton num    mean pT'
     for tau_s in matchingTime_list:
         # get parton pT
         sfactor = (sfactor_list[sfactor_list[:,0]==tau_s])[0,1]
@@ -254,7 +256,7 @@ def meanPTCalculatorShell():
         print "%8.2f \t %10.6e \t %10.6e \t %10.6e \t %10.6e \t %10.6e"%(tau_s, parton_totalpt, parton_totalnum, \
             photon_pt, photon_totalnum, meanPT_all)
     # clean the temp files before leaving
-    cleanfsResultFolders()
+    cleanfsResultFolders(event_num)
 
 if __name__ == "__main__":
     meanPTCalculatorShell()
