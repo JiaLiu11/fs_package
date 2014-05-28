@@ -9,13 +9,14 @@
 #   May 19, 2014     first version
 
 import sys, shutil
-from os import path, stat, getcwd, stat
+from os import path, stat, getcwd, stat, rename
 import numpy as np
 from subprocess import call
 
 rootDir = path.abspath('..')  #since this script is in fs_package/utilities/
 fs_location = path.join(rootDir, 'fs')
 fs_particle_location = path.join(rootDir, 'fs_particle')
+is_location = path.join(rootDir, 'iS')
 table_location = path.join(rootDir, 'tables')
 matchingTime_list = np.linspace(1, 10, 10)
 
@@ -106,6 +107,47 @@ def calculatePartonMeanPT(event_num, tau_s, sfactor, Edec, dxdy=0.01):
     return (dptdy, dndy)
 
 ################################################################################################
+def runiSGetPhoton(data_location):
+    """
+    re-run iS only to find the photon pT spectra
+    return: success code or fail code
+    """
+    iS_EOS_location = path.join(is_location, 'EOS')
+    # backup the choosen_particles table
+    choosen_particles_table_original = path.join(iS_EOS_location, 'chosen_particles.dat')
+    choosen_particles_table_backup = path.join(iS_EOS_location, 'chosen_particles.dat_backupi')
+    if path.isfile(choosen_particles_table_original):
+        rename(choosen_particles_table_original, choosen_particles_table_backup)
+    # write only photon in the choosen particles file
+    choosen_particles_table_photon = open(choosen_particles_table_original, 'w')
+    choosen_particles_table_photon.write('  22\n')
+    # move data files to iS
+    decdat2_source = path.join(data_location, 'decdat2.dat')
+    decdat2_target = path.join(is_location, 'results','decdat2.dat')
+    shutil.copy2(decdat2_source, decdat2_target)
+    surface_source = path.join(data_location, 'surface.dat')
+    surface_target = path.join(is_location, 'results','surface.dat')
+    shutil.copy2(surface_source, surface_target)
+    decdatmu_source = path.join(data_location, 'decdat_mu.dat')
+    decdatmu_target = path.join(is_location, 'results','decdat_mu.dat')
+    shutil.copy2(decdatmu_source, decdatmu_target)
+    # run iS
+    iS_cmd = is_location + "/./iS.e >runlog.dat"
+    retcode = call(iS_cmd, shell=True, cwd=is_location)
+    if retcode ==0:
+      print 'iS completes!'
+    else :
+      print 'iS stops unexpectly!\n'
+      sys.exit(-1)
+    # resume the original choosen_particles file
+    shutil.remove(choosen_particles_table_original)
+    if path.isfile(choosen_particles_table_backup):
+        rename(choosen_particles_table_backup, choosen_particles_table_original)
+    return
+    # backup the photon file to database
+    backup_cmd = 'cp results/thermal_22_*.dat '+ data_location
+    call(backup_cmd, shell=True, cwd=is_location)
+
 def readParticleNum(particle_idx, targetFolder):
     """
     read particle number from file.
@@ -182,8 +224,9 @@ def meanPTCalculatorShell():
         # get parton pT
         sfactor = (sfactor_list[sfactor_list[:,0]==tau_s])[0,1]
         parton_totalpt, parton_totalnum = calculatePartonMeanPT(event_num, tau_s, sfactor, 0.18)
-        # get pion pT
+        # get photon pT
         is_data_folder = path.join(rootDir, 'localdataBase', 'event_%d'%event_num,'%g'%tau_s)
+        runiSGetPhoton(is_data_folder)
         pion_totalpt, pion_totalnum = getPionPT(pt_tbl[:,0], pt_tbl[:,1],is_data_folder)
 
         meanPT_all = (parton_totalpt+pion_totalpt)/(parton_totalnum+pion_totalnum)
