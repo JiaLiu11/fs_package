@@ -39,6 +39,27 @@ def generatePartonNumFromLm(datafile, event_num, tau0, taumin, taumax, dtau):
     # get particle number
     return
 
+def generatePartonEnergyFromLm(datafile, event_num, tau0, taumin, taumax, dtau):
+    """
+    Use free-streaming and matching code to process parton pT^2 file and dump the dNdydphi file.
+    Return: success code or fail code.
+    """
+    # get data file and copy it to fs_folder
+    fs_init_folder = path.join(fs_location, 'data', 'events')
+    fs_init_file = path.join(fs_init_folder, 'sd_event_%d_block.dat' % event_num)
+    shutil.copy2(datafile, fs_init_file)
+    # run free-streaming and matching
+    lm_cmd = fs_location + "/./lm.e " + 'event_mode=' + str(event_num) \
+        + ' tau0=' + str(tau0) + ' taumin=' + str(taumin) + ' taumax=' + str(taumax) \
+        + ' dtau=' + str(dtau)
+    lm_retcode = call(lm_cmd, shell=True, cwd=fs_location)
+    if lm_retcode == 0:
+        pass
+    else:
+        print 'generatePartonNum: Freestreaming and Landau Matching stops unexpectly!'
+        sys.exit(-1)
+    # get particle number
+    return
 
 def calculatePartonMeanPT(event_num, tau_s, sfactor, Edec, dxdy=0.01):
     """
@@ -144,9 +165,15 @@ def meanPTCalculatorShell():
     sfactor_list = np.loadtxt(path.join(table_location,'sfactor_log.dat'))
 
     event_num = 99
-    particle_file = path.join(rootDir,'superMC','data', 'sd_event_%d_block_particle.dat'%event_num)
-    #generatePartonNumFromLm(particle_file, event_num, 0.01, \
-    #    matchingTime_list[0], matchingTime_list[-1], matchingTime_list[1]-matchingTime_list[0])
+    MCevents_folder = path.join(rootDir,'superMC','data')
+    particle_file = path.join(MCevents_folder, 'sd_event_%d_block_particle.dat'%event_num)
+    energy_file   = path.join(MCevents_folder, 'sd_event_%d_block.dat'%event_num)
+    # generate free-streamed profile again
+    generatePartonNumFromLm(particle_file, event_num, 0.01, \
+        matchingTime_list[0], matchingTime_list[-1], matchingTime_list[1]-matchingTime_list[0])
+    generatePartonEnergyFromLm(energy_file, event_num, 0.01, \
+        matchingTime_list[0], matchingTime_list[-1], matchingTime_list[1]-matchingTime_list[0])
+
     print '%    tau_s     total parton pT  total parton num total pion pT  total pion num    mean pT'
     for tau_s in matchingTime_list:
         # get parton pT
