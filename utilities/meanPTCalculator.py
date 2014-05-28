@@ -4,6 +4,8 @@
 #
 #   Author:   Jia Liu    <liu.2053@osu.edu>
 #   History:
+#   May 28, 2014     Get photon instead of pion pT from hydro, and make the weighting of 
+#                   gluon:photon=1:1
 #   May 19, 2014     first version
 
 import sys, shutil
@@ -16,6 +18,10 @@ fs_location = path.join(rootDir, 'fs')
 fs_particle_location = path.join(rootDir, 'fs_particle')
 table_location = path.join(rootDir, 'tables')
 matchingTime_list = np.linspace(1, 10, 10)
+
+# some constants
+photon_degeneracy = 2.0
+gluon_degeneracy = 8.0
 
 def generatePartonNumFromLm(datafile, event_num, tau0, taumin, taumax, dtau):
     """
@@ -141,20 +147,17 @@ def calculateParticleMeanPT(particle_idx, pT_tbl, pTweight_tbl, targetFolder):
 
 
 
-def getPionPT(dpT_tbl, pTweight_tbl, is_result_folder):
+def getPhotonPT(dpT_tbl, pTweight_tbl, is_result_folder):
     """
-    get mean pT of all three kinds of pions.
+    This is the shell of function calculateParticleMeanPT(). It gets mean pT of photon. 
     Input: tau_s, folder to the event 
     Return: total pT, total pion number
     """
-    pion_MC_list = [211, 111,-211] # Monte-Carlo number of pion+, pion0, pion-
+    photon_MC_idx = 22 # Monte-Carlo number of photon
     total_pt = 0
     total_num = 0
-    for pion_kind in pion_MC_list:
-        pion_folder = is_result_folder
-        pion_pt, pion_num = calculateParticleMeanPT(pion_kind, dpT_tbl, pTweight_tbl, pion_folder)
-        total_pt = total_pt + pion_pt
-        total_num = total_num + pion_num
+    photon_folder = is_result_folder
+    total_pt, total_num = calculateParticleMeanPT(photon_MC_idx, dpT_tbl, pTweight_tbl, photon_folder)
     return (total_pt, total_num)
 
 
