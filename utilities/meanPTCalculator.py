@@ -228,8 +228,9 @@ def meanPTCalculatorShell():
         is_data_folder = path.join(rootDir, 'localdataBase', 'event_%d'%event_num,'%g'%tau_s)
         runiSGetPhoton(is_data_folder)
         pion_totalpt, pion_totalnum = getPionPT(pt_tbl[:,0], pt_tbl[:,1],is_data_folder)
-
-        meanPT_all = (parton_totalpt+pion_totalpt)/(parton_totalnum+pion_totalnum)
+        # consider the degenercy of gluon and photon
+        meanPT_all = (parton_totalpt/gluon_degeneracy+pion_totalpt/photon_degeneracy)\
+        /(parton_totalnum/gluon_degeneracy+pion_totalnum/photon_degeneracy)
         print "%8.2f \t %10.6e \t %10.6e \t %10.6e \t %10.6e \t %10.6e"%(tau_s, parton_totalpt, parton_totalnum, \
             pion_totalpt, pion_totalnum, meanPT_all)
 
