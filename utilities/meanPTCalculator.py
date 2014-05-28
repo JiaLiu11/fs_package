@@ -9,7 +9,7 @@
 #   May 19, 2014     first version
 
 import sys, shutil
-from os import path, stat, getcwd, stat, rename
+from os import path, stat, getcwd, stat, rename, remove
 import numpy as np
 from subprocess import call
 
@@ -18,8 +18,8 @@ fs_location = path.join(rootDir, 'fs')
 fs_particle_location = path.join(rootDir, 'fs_particle')
 is_location = path.join(rootDir, 'iS')
 table_location = path.join(rootDir, 'tables')
-matchingTime_list = np.linspace(1, 10, 10)
-
+#matchingTime_list = np.linspace(1, 10, 10)
+matchingTime_list = [1,2]
 # some constants
 photon_degeneracy = 2.0
 gluon_degeneracy = 8.0
@@ -36,7 +36,7 @@ def generatePartonNumFromLm(datafile, event_num, tau0, taumin, taumax, dtau):
     # run free-streaming and matching
     lm_cmd = fs_particle_location + "/./lm.e " + 'event_mode=' + str(event_num) \
         + ' tau0=' + str(tau0) + ' taumin=' + str(taumin) + ' taumax=' + str(taumax) \
-        + ' dtau=' + str(dtau)
+        + ' dtau=' + str(dtau) + ' >fs_runlog.dat'
     lm_retcode = call(lm_cmd, shell=True, cwd=fs_particle_location)
     if lm_retcode == 0:
         pass
@@ -58,7 +58,7 @@ def generatePartonEnergyFromLm(datafile, event_num, tau0, taumin, taumax, dtau):
     # run free-streaming and matching
     lm_cmd = fs_location + "/./lm.e " + 'event_mode=' + str(event_num) \
         + ' tau0=' + str(tau0) + ' taumin=' + str(taumin) + ' taumax=' + str(taumax) \
-        + ' dtau=' + str(dtau)
+        + ' dtau=' + str(dtau) + ' >fs_runlog.dat'
     lm_retcode = call(lm_cmd, shell=True, cwd=fs_location)
     if lm_retcode == 0:
         pass
@@ -121,6 +121,7 @@ def runiSGetPhoton(data_location):
     # write only photon in the choosen particles file
     choosen_particles_table_photon = open(choosen_particles_table_original, 'w')
     choosen_particles_table_photon.write('  22\n')
+    choosen_particles_table_photon.close()
     # move data files to iS
     decdat2_source = path.join(data_location, 'decdat2.dat')
     decdat2_target = path.join(is_location, 'results','decdat2.dat')
@@ -140,13 +141,13 @@ def runiSGetPhoton(data_location):
       print 'iS stops unexpectly!\n'
       sys.exit(-1)
     # resume the original choosen_particles file
-    shutil.remove(choosen_particles_table_original)
+    remove(choosen_particles_table_original)
     if path.isfile(choosen_particles_table_backup):
         rename(choosen_particles_table_backup, choosen_particles_table_original)
-    return
     # backup the photon file to database
     backup_cmd = 'cp results/thermal_22_*.dat '+ data_location
     call(backup_cmd, shell=True, cwd=is_location)
+    return
 
 def readParticleNum(particle_idx, targetFolder):
     """
@@ -214,11 +215,14 @@ def meanPTCalculatorShell():
     particle_file = path.join(MCevents_folder, 'sd_event_%d_block_particle.dat'%event_num)
     energy_file   = path.join(MCevents_folder, 'sd_event_%d_block.dat'%event_num)
     # generate free-streamed profile again
+    print 'Start to run free-streaming for pT order 1:'
     generatePartonNumFromLm(particle_file, event_num, 0.01, \
         matchingTime_list[0], matchingTime_list[-1], matchingTime_list[1]-matchingTime_list[0])
+    print 'Start to run free-streaming for pT order 2:'
     generatePartonEnergyFromLm(energy_file, event_num, 0.01, \
         matchingTime_list[0], matchingTime_list[-1], matchingTime_list[1]-matchingTime_list[0])
-
+    print 'fs code finished!'
+    
     print '%    tau_s     total parton pT  total parton num total pion pT  total pion num    mean pT'
     for tau_s in matchingTime_list:
         # get parton pT
