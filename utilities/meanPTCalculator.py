@@ -15,10 +15,8 @@ import numpy as np
 from subprocess import call
 
 # run parameters
-#event_list = range(1,41)
-event_list = [1]
-matchingTime_list = [1,2]
-#matchingTime_list = np.linspace(1,10,10)
+event_list = range(1,41)
+matchingTime_list = np.linspace(1,10,10)
 
 # folders locations
 rootDir = path.abspath('..')  #root directory for current node
@@ -251,7 +249,8 @@ def meanPTCalculatorShell():
     pt_tbl_file = path.join(rootDir, 'iS/tables', 'pT_gauss_table.dat')
     pt_tbl = np.loadtxt(pt_tbl_file)
     sfactor_list = np.loadtxt(path.join(table_location,'sfactor_log.dat'))
-
+    meanPT_file = path.join(database_location, node_name, 'meanPT.dat')
+    meanPT_log = open(meanPT_file, 'w')
     for event_num in event_list:
         particle_file = path.join(database_location, node_name, 'MCevents' ,'sd_event_%d_block_particle.dat'%event_num)
         energy_file   = path.join(database_location, node_name, 'MCevents' ,'sd_event_%d_block.dat'%event_num)
@@ -278,8 +277,11 @@ def meanPTCalculatorShell():
             /(parton_totalnum/gluon_degeneracy+photon_totalnum/photon_degeneracy)
             print "%8.2f \t %10.6e \t %10.6e \t %10.6e \t %10.6e \t %10.6e"%(tau_s, parton_totalpt, parton_totalnum, \
                 photon_pt, photon_totalnum, meanPT_all)
+            meanPT_log.write("%8.2f \t %10.6e \t %10.6e \t %10.6e \t %10.6e \t %10.6e\n"%(tau_s, parton_totalpt, parton_totalnum, \
+                photon_pt, photon_totalnum, meanPT_all))
         # clean the temp files before leaving
         cleanfsResultFolders(event_num)
+    meanPT_log.close()
 
 if __name__ == "__main__":
     meanPTCalculatorShell()
