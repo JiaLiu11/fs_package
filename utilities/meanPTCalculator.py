@@ -4,21 +4,31 @@
 #
 #   Author:   Jia Liu    <liu.2053@osu.edu>
 #   History:
+#   May 29, 2014     Add event-by-event run mode.
 #   May 28, 2014     Get photon instead of pion pT from hydro, and make the weighting of 
 #                   gluon:photon=1:1
 #   May 19, 2014     first version
 
 import sys, shutil
-from os import path, stat, getcwd, stat, rename, remove
+from os import path, stat, getcwd, stat, rename, remove, makedirs
 import numpy as np
 from subprocess import call
 
-rootDir = path.abspath('..')  #since this script is in fs_package/utilities/
+# run parameters
+#event_list = range(1,41)
+event_list = [1]
+matchingTime_list = [1,2]
+#matchingTime_list = np.linspace(1,10,10)
+
+# folders locations
+rootDir = path.abspath('..')  #root directory for current node
+database_location = path.join(path.abspath('../../..'),'dataBase') # 
 fs_location = path.join(rootDir, 'fs')
-fs_particle_location = path.join(rootDir, 'fs_particle')
+fs_particle_location = path.join(rootDir, 'fs','fs_particle_data')
 is_location = path.join(rootDir, 'iS')
 table_location = path.join(rootDir, 'tables')
-matchingTime_list = np.linspace(0.4,1.8,8)
+node_name = rootDir.split('/')[-1]
+
 # some constants
 photon_degeneracy = 2.0
 gluon_degeneracy = 8.0
@@ -29,20 +39,34 @@ def generatePartonNumFromLm(datafile, event_num, tau0, taumin, taumax, dtau):
     Return: success code or fail code.
     """
     # get data file and copy it to fs_folder
-    fs_init_folder = path.join(fs_particle_location, 'data', 'events')
+    fs_init_folder = path.join(fs_location, 'data', 'events')
     fs_init_file = path.join(fs_init_folder, 'sd_event_%d_block.dat' % event_num)
+    # clean and move file
+    if(path.isfile(fs_init_file)):
+        remove(fs_init_file)
     shutil.copy2(datafile, fs_init_file)
     # run free-streaming and matching
-    lm_cmd = fs_particle_location + "/./lm.e " + 'event_mode=' + str(event_num) \
+    lm_cmd = fs_location + "/./lm.e " + 'event_mode=' + str(event_num) \
         + ' tau0=' + str(tau0) + ' taumin=' + str(taumin) + ' taumax=' + str(taumax) \
         + ' dtau=' + str(dtau) + ' >fs_runlog.dat'
-    lm_retcode = call(lm_cmd, shell=True, cwd=fs_particle_location)
+    lm_retcode = call(lm_cmd, shell=True, cwd=fs_location)
     if lm_retcode == 0:
         pass
     else:
         print 'generatePartonNum: Freestreaming and Landau Matching stops unexpectly!'
         sys.exit(-1)
-    # get particle number
+    # backup data
+    backup_location =path.join(fs_particle_location,'result','event_%d'%event_num)
+    if path.isdir(backup_location):
+        shutil.rmtree(backup_location)
+        makedirs(backup_location)
+    backup_cmd = 'mv -f data/result/* '+ 'fs_particle_data/result/'
+    backup_retcode = call(backup_cmd, shell=True, cwd=fs_location)
+    if lm_retcode == 0:
+        pass
+    else:
+        print 'generatePartonNum: cannot backup folder!'
+        sys.exit(-1)    
     return
 
 def generatePartonEnergyFromLm(datafile, event_num, tau0, taumin, taumax, dtau):
@@ -62,7 +86,7 @@ def generatePartonEnergyFromLm(datafile, event_num, tau0, taumin, taumax, dtau):
     if lm_retcode == 0:
         pass
     else:
-        print 'generatePartonNum: Freestreaming and Landau Matching stops unexpectly!'
+        print 'generatePartonEnergyFromLm: Freestreaming and Landau Matching stops unexpectly!'
         sys.exit(-1)
     # get particle number
     return
@@ -74,7 +98,7 @@ def calculatePartonMeanPT(event_num, tau_s, sfactor, Edec, dxdy=0.01):
     """
     # identify necessary files
     dptd2rdphi_file = path.join(fs_location, 'data', 'result', 'event_%d'%event_num, '%g'%tau_s, 'dEd2rdphip_kln.dat')
-    dnd2rdphi_file = path.join(fs_particle_location, 'data', 'result', 'event_%d'%event_num, '%g'%tau_s,\
+    dnd2rdphi_file = path.join(fs_particle_location, 'result', 'event_%d'%event_num, '%g'%tau_s,\
         'dEd2rdphip_kln.dat')
     edinit_file = path.join(fs_location, 'data', 'result', 'event_%d'%event_num, '%g'%tau_s, 'ed_profile_kln.dat')
     phipTbl = np.loadtxt(path.join(table_location,'phip_gauss_table.dat'))  #100 points Gaussian points table for phip integration.
@@ -214,7 +238,7 @@ def cleanfsResultFolders(event_num):
     clean the fs results folder for this mean pt run.
     """
     fs_result_location = path.join(fs_location, 'data','result','event_%d'%event_num)
-    fs_particle_result_location = path.join(fs_particle_location, 'data', 'result', 'event_%d'%event_num)
+    fs_particle_result_location = path.join(fs_particle_location, 'result', 'event_%d'%event_num)
     if path.isdir(fs_result_location):
         shutil.rmtree(fs_result_location)
     if path.isdir(fs_particle_result_location):
@@ -228,35 +252,34 @@ def meanPTCalculatorShell():
     pt_tbl = np.loadtxt(pt_tbl_file)
     sfactor_list = np.loadtxt(path.join(table_location,'sfactor_log.dat'))
 
-    event_num = 99
-    MCevents_folder = path.join(rootDir,'superMC','data')
-    particle_file = path.join(MCevents_folder, 'sd_event_%d_block_particle.dat'%event_num)
-    energy_file   = path.join(MCevents_folder, 'sd_event_%d_block.dat'%event_num)
-    # generate free-streamed profile again
-    print 'Start to run free-streaming for pT order 1:'
-    generatePartonNumFromLm(particle_file, event_num, 0.01, \
-        matchingTime_list[0], matchingTime_list[-1], matchingTime_list[1]-matchingTime_list[0])
-    print 'Start to run free-streaming for pT order 2:'
-    generatePartonEnergyFromLm(energy_file, event_num, 0.01, \
-        matchingTime_list[0], matchingTime_list[-1], matchingTime_list[1]-matchingTime_list[0])
-    print 'fs code finished!'
+    for event_num in event_list:
+        particle_file = path.join(database_location, node_name, 'MCevents' ,'sd_event_%d_block_particle.dat'%event_num)
+        energy_file   = path.join(database_location, node_name, 'MCevents' ,'sd_event_%d_block.dat'%event_num)
+        # generate free-streamed profile again
+        print 'Start to run free-streaming for pT order 1:'
+        generatePartonNumFromLm(particle_file, event_num, 0.01, \
+            matchingTime_list[0], matchingTime_list[-1], matchingTime_list[1]-matchingTime_list[0])
+        print 'Start to run free-streaming for pT order 2:'
+        generatePartonEnergyFromLm(energy_file, event_num, 0.01, \
+            matchingTime_list[0], matchingTime_list[-1], matchingTime_list[1]-matchingTime_list[0])
+        print 'fs code finished!'
 
-    print '%    tau_s     total parton pT  total parton num totalphoton pT  totalphoton num    mean pT'
-    for tau_s in matchingTime_list:
-        # get parton pT
-        sfactor = (sfactor_list[sfactor_list[:,0]==tau_s])[0,1]
-        parton_totalpt, parton_totalnum = calculatePartonMeanPT(event_num, tau_s, sfactor, 0.18)
-        # get photon pT
-        is_data_folder = path.join(rootDir, 'localdataBase', 'event_%d'%event_num,'%g'%tau_s)
-        runiSGetPhoton(is_data_folder)
-        photon_pt, photon_totalnum = getPhotonPT(pt_tbl[:,0], pt_tbl[:,1],is_data_folder)
-        # consider the degenercy of gluon and photon
-        meanPT_all = (parton_totalpt/gluon_degeneracy+photon_pt/photon_degeneracy)\
-        /(parton_totalnum/gluon_degeneracy+photon_totalnum/photon_degeneracy)
-        print "%8.2f \t %10.6e \t %10.6e \t %10.6e \t %10.6e \t %10.6e"%(tau_s, parton_totalpt, parton_totalnum, \
-            photon_pt, photon_totalnum, meanPT_all)
-    # clean the temp files before leaving
-    cleanfsResultFolders(event_num)
+        print '%    tau_s     total parton pT  total parton num totalphoton pT  totalphoton num    mean pT'
+        for tau_s in matchingTime_list:
+            # get parton pT
+            sfactor = (sfactor_list[sfactor_list[:,0]==tau_s])[0,1]
+            parton_totalpt, parton_totalnum = calculatePartonMeanPT(event_num, tau_s, sfactor, 0.18)
+            # get photon pT
+            is_data_folder = path.join(database_location, node_name, 'event_%d'%event_num,'%g'%tau_s)
+            runiSGetPhoton(is_data_folder)
+            photon_pt, photon_totalnum = getPhotonPT(pt_tbl[:,0], pt_tbl[:,1],is_data_folder)
+            # consider the degenercy of gluon and photon
+            meanPT_all = (parton_totalpt/gluon_degeneracy+photon_pt/photon_degeneracy)\
+            /(parton_totalnum/gluon_degeneracy+photon_totalnum/photon_degeneracy)
+            print "%8.2f \t %10.6e \t %10.6e \t %10.6e \t %10.6e \t %10.6e"%(tau_s, parton_totalpt, parton_totalnum, \
+                photon_pt, photon_totalnum, meanPT_all)
+        # clean the temp files before leaving
+        cleanfsResultFolders(event_num)
 
 if __name__ == "__main__":
     meanPTCalculatorShell()
