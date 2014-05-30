@@ -157,14 +157,25 @@ def getSfactor(mth_time):
     Get the rescale factor from the data file, which is read in at the 
     beginning of this script
     """
-    #find if the matching time is in the table
-    temp = '%.8f'%mth_time
-    mth_time = float(temp)
-    if (sfactor_list[:,0]==mth_time).any()==True:
-        return (sfactor_list[sfactor_list[:,0]==mth_time])[0,1]
-    else :
-        print 'No scale factor available for the current matching time:',mth_time
-        sys.exit(-1) 
+    # #find if the matching time is in the table
+    # temp = '%.8f'%mth_time
+    # mth_time = float(temp)
+    # if (sfactor_list[:,0]==mth_time).any()==True:
+    #     return (sfactor_list[sfactor_list[:,0]==mth_time])[0,1]
+    # else :
+    #     print 'No scale factor available for the current matching time:',mth_time
+    #     sys.exit(-1)
+    # find the scaling factor for time tau by comparing string
+    tau_series = ['%g'%i for i in sfactor_list[:,0]] # convert to string
+    try:
+        tau_idx = tau_series.index('%g'%mth_time) #index (row number) of tau
+    except ValueError:
+        print 'getSfactor error!'
+        print 'tau=%g'%mth_time+' is not in sfactor_list.dat!'
+        sys.exit(-1)
+    sfactor = sfactor_list[tau_idx,1] 
+    return sfactor
+
 
 def getEventAngle(angle_order):
     """ 
