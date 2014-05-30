@@ -9,6 +9,7 @@ event_num = 99
 matchingTimeList=np.linspace(8,10,3)
 rootDir = path.abspath('..')  #define the root folder
 table_location = path.join(rootDir, 'tables')
+iSFolder = path.join(rootDir,'iS')
 sfactor_list = np.loadtxt(path.join(table_location,'sfactor_log.dat'))
 
 print 'tau', '	dEdy_thermal','	dEdy_hydro_init', '	dEdy_hydro_final',  '	dEdy_hydro_cf'
@@ -35,7 +36,7 @@ for tau in matchingTimeList:
 		dEdy_FO = 0
 		dEdy_cf = 0
 	else:
-		dEdy_cf = dEcounters.dEdydphipSigmaFO('iS', iSDataFolder, targetFolder, 'dEdydphipFO.dat')
+		dEdy_cf = dEcounters.dEdydphipSigmaFO(iSFolder, iSDataFolder, targetFolder, 'dEdydphipFO.dat')
 		dEdy_FO = dEcounters.dEdyTotalDecdat2(iSDataFolder)
 
 	print tau, '\t', dEdy_thermal, '\t', dEdy_init-dEdy_thermal, '\t', dEdy_FO, '\t', dEdy_cf

@@ -44,7 +44,7 @@ wn_fo_numerator_cell{i} = zeros(events_total, mtimes_total);
 end
 
 % prepare data file names
-rootDir = fileparts(fileparts(pwd())) %grand-parent folder of the current directory
+rootDir = fileparts(fileparts(pwd())); %grand-parent folder of the current directory
 tableDir = fullfile(rootDir, 'fs_package','tables');
 dataBaseDir = fullfile(rootDir, 'dataBase');
 eventDataDir = fullfile(dataBaseDir, 'node%d', 'event_%d', '%g') ;
