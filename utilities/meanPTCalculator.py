@@ -279,6 +279,7 @@ def meanPTCalculatorShell():
                 photon_pt, photon_totalnum, meanPT_all)
             meanPT_log.write("%8.2f \t %10.6e \t %10.6e \t %10.6e \t %10.6e \t %10.6e\n"%(tau_s, parton_totalpt, parton_totalnum, \
                 photon_pt, photon_totalnum, meanPT_all))
+            meanPT_log.flush()
         # clean the temp files before leaving
         cleanfsResultFolders(event_num)
     meanPT_log.close()
