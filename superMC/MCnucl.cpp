@@ -746,8 +746,8 @@ void MCnucl::makeTable(double ptmin, double dpt, int iPtmax)
 
   dT=10.0/siginNN/overSample;   // elementary thickness step
   if (shape_of_nucleons>=2 && shape_of_nucleons<=9) {  // Gaussian nucleons require finer steps
-    tmax = paraRdr->getVal("tmax_subdivition")*(tmax -1 ) + 1;
-    dT /= paraRdr->getVal("tmax_subdivition");
+    tmax = paraRdr->getVal("tmax_subdivision")*(tmax -1 ) + 1;
+    dT /= paraRdr->getVal("tmax_subdivision");
   }
 
   // range of thicknesses for pt dependent lookup table
