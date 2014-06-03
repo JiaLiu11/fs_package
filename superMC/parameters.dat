@@ -47,10 +47,10 @@ gauss_nucl_width = 0.5    # 4-> User specified width for Gaussian nucleons
 
 # Collision Optns
 ecm = 2760                # Beam Energy sqrt(s) in GeV
-bmin = 0                  # Minimum sampled impact parameter
-bmax = 20.0                  # Maximum sampled impact parameter
-Npmin = 1                 # Minimum participant nucleon cut
-Npmax = 1000              # Maximum participant nucleon cut
+bmin = 3.8                  # Minimum sampled impact parameter
+bmax = 7.7                  # Maximum sampled impact parameter
+Npmin = 223                 # Minimum participant nucleon cut
+Npmax = 305              # Maximum participant nucleon cut
 
 cutdSdy = 0               # cut centrality with additional requirements on total entropy density (without normalization factor)
 cutdSdy_lowerBound =  551.864          # lower bound of the allowed total entropy density
@@ -92,13 +92,13 @@ use_sd = 0                # Boolean toggle to print the raw CGC and Glauber outp
 use_ed = 0                # Boolean toggle to covert the entropy profile using the 
                           # EOS and print the energy profile (do not use if Et=1)
 use_4col = 0              # Boolean toggle to print 4 column format (rap, x, y, data)
-use_block = 1             # Boolean toggle to print matrix format (good for matlab)
+use_block = 0             # Boolean toggle to print matrix format (good for matlab)
 use_5col = 1              # Boolean toggle to print 5 column format (rap, x, y, pt, data)
 use_ptCol = 0             # Boolean toggle to print pt-unintegrated table, working in mixed mode
 
 
 # P_T spectura optns
-PT_Flag = 0               # Boolena toogle to output PT-integrated gluon density; if < 0, output pT unintegrated particle spectra; PT_Flag can not take 0
+PT_Flag = -1               # Boolena toogle to output PT-integrated gluon density; if < 0, output pT unintegrated particle spectra; PT_Flag can not take 0
 mixedMode = 0             # if > 0, calculate both the pT-unintegrated particle spectra and pT-integrated particle density
                           # All the following parameters in this block will only be effective when pT_Flag < 0 and mixedMode > 0
 PT_Min = 0.1              # Minimum value of PT
