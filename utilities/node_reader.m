@@ -13,7 +13,6 @@
 
 % Have a clean start
 clear all
-clc
 
 % Specify the info for running
 nodes_list = 1:10;
