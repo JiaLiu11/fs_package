@@ -360,8 +360,8 @@ void MakeDensity::generate_profile_ebe(int nevent)
   
   int use_5col = 0;
   int use_ptCol = 0;
-  // sub-switch
-  if(PTinte>0)
+  // no pT integration, then these two options are available
+  if(PTinte<0)
   {
     int use_5col = paraRdr->getVal("use_5col");
     int use_ptCol = paraRdr->getVal("use_ptCol");
