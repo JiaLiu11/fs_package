@@ -87,7 +87,7 @@ ecc_to_order = 9          # 9-> Calculate the eccentricity of the profile for ea
 
 
 # Print to File Optns
-use_sd = 0                # Boolean toggle to print the raw CGC and Glauber output 
+use_sd = 1                # Boolean toggle to print the raw CGC and Glauber output 
                           # (CGC: gluon density; Glb: (1-alpha)/2*WN + alpha*BC) 
 use_ed = 0                # Boolean toggle to covert the entropy profile using the 
                           # EOS and print the energy profile (do not use if Et=1)
