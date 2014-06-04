@@ -363,8 +363,8 @@ void MakeDensity::generate_profile_ebe(int nevent)
   // no pT integration, then these two options are available
   if(PTinte<0)
   {
-    int use_5col = paraRdr->getVal("use_5col");
-    int use_ptCol = paraRdr->getVal("use_ptCol");
+    use_5col = paraRdr->getVal("use_5col");
+    use_ptCol = paraRdr->getVal("use_ptCol");
   }
 
   char buffer[200];
