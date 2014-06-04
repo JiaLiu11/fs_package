@@ -797,6 +797,7 @@ int progress_counter = 0, progress_percent = 0, last_update = 0;
     }
   }
   cout << "MCnucl::makeTable(double, double, int): done" << endl;
+  dumpdNdydptTable5Col("data/dNdydptTable.dat", dndydptTable, 0);
 }
 
 void MCnucl::dumpdNdyTable4Col(char filename[], double *** dNdyTable, const int iy)
