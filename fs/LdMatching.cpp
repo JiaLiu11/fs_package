@@ -1221,8 +1221,9 @@ void LdMatching::CalVis2Ideal_Ratio(const int iRap)
         exit(0);
       }
       b0=sqrt(b0);
-
-      double ratio=a0/(b0+1e-16);
+      double pressure_now = (DataTable->GetPres(iRap, i, j)+DataTable->GetBulk_Pi(iRap, i, j));
+      double ratio = a0/(pressure_now+1e-16);
+      //double ratio=a0/(b0+1e-16);
       DataTable->SetVisRatio(iRap, i, j, ratio);
                     
 // //debug
