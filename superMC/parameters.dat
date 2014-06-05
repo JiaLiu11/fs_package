@@ -47,10 +47,10 @@ gauss_nucl_width = 0.5    # 4-> User specified width for Gaussian nucleons
 
 # Collision Optns
 ecm = 2760                # Beam Energy sqrt(s) in GeV
-bmin = 0                  # Minimum sampled impact parameter
-bmax = 20.0                  # Maximum sampled impact parameter
-Npmin = 1                 # Minimum participant nucleon cut
-Npmax = 1000              # Maximum participant nucleon cut
+bmin = 3.8                  # Minimum sampled impact parameter
+bmax = 7.7                  # Maximum sampled impact parameter
+Npmin = 223                 # Minimum participant nucleon cut
+Npmax = 306                 # Maximum participant nucleon cut
 
 cutdSdy = 0               # cut centrality with additional requirements on total entropy density (without normalization factor)
 cutdSdy_lowerBound =  551.864          # lower bound of the allowed total entropy density
