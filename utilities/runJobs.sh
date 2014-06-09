@@ -11,8 +11,9 @@ fi
 
 for i in $(eval echo "{1..$1}"); do
 
-	cd $here
-	cp -r -a $here/main $here/nodes/node$i
+	cd $here/nodes
+	mkdir node$i
+	cp -r -a $here/fs_package/* $here/nodes/node$i
 	cd $here/nodes/node$i/utilities
 
 	screen -dmS jia$i
