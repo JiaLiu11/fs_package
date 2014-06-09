@@ -26,6 +26,7 @@ fs_particle_location = path.join(rootDir, 'fs','fs_particle_data')
 is_location = path.join(rootDir, 'iS')
 table_location = path.join(rootDir, 'tables')
 node_name = rootDir.split('/')[-1]
+sfactor_list = np.loadtxt(path.join(table_location,'sfactor_log.dat'))
 
 # some constants
 photon_degeneracy = 2.0
@@ -88,6 +89,23 @@ def generatePartonEnergyFromLm(datafile, event_num, tau0, taumin, taumax, dtau):
         sys.exit(-1)
     # get particle number
     return
+
+
+def getSfactor(mth_time):
+    """ 
+    Get the rescale factor from the data file, which is read in at the 
+    beginning of this script
+    """
+    tau_series = ['%g'%i for i in sfactor_list[:,0]] # convert to string
+    try:
+        tau_idx = tau_series.index('%g'%mth_time) #index (row number) of tau
+    except ValueError:
+        print 'getSfactor error!'
+        print 'tau=%g'%mth_time+' is not in sfactor_list.dat!'
+        sys.exit(-1)
+    sfactor = sfactor_list[tau_idx,1] 
+    return sfactor
+
 
 def calculatePartonMeanPT(event_num, tau_s, sfactor, Edec, dxdy=0.01):
     """
@@ -248,7 +266,6 @@ def meanPTCalculatorShell():
     # prepare integration table
     pt_tbl_file = path.join(rootDir, 'iS/tables', 'pT_gauss_table.dat')
     pt_tbl = np.loadtxt(pt_tbl_file)
-    sfactor_list = np.loadtxt(path.join(table_location,'sfactor_log.dat'))
     meanPT_file = path.join(database_location, node_name, 'meanPT.dat')
     meanPT_log = open(meanPT_file, 'w')
     for event_num in event_list:
@@ -266,7 +283,7 @@ def meanPTCalculatorShell():
         print '%    tau_s     total parton pT  total parton num totalphoton pT  totalphoton num    mean pT'
         for tau_s in matchingTime_list:
             # get parton pT
-            sfactor = (sfactor_list[sfactor_list[:,0]==tau_s])[0,1]
+            sfactor = getSfactor(tau_s)
             parton_totalpt, parton_totalnum = calculatePartonMeanPT(event_num, tau_s, sfactor, 0.18)
             # get photon pT
             is_data_folder = path.join(database_location, node_name, 'event_%d'%event_num,'%g'%tau_s)
