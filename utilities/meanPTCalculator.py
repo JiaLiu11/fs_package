@@ -30,7 +30,7 @@ sfactor_list = np.loadtxt(path.join(table_location,'sfactor_log.dat'))
 
 # some constants
 photon_degeneracy = 2.0
-gluon_degeneracy = 8.0
+gluon_degeneracy = 16.0  #color 8 * helicity 2
 
 def generatePartonNumFromLm(datafile, event_num, tau0, taumin, taumax, dtau):
     """

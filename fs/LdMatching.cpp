@@ -34,7 +34,7 @@ LdMatching::LdMatching(ParameterReader *params_in, string result_dir)
   dEdydphipTable = 0;
   phip_order = 100;
   sfactor = lm_params->getVal("sfactor");
-  gluon_prefactor = 16.0/pow(2*M_PI, 3.0);
+  gluon_prefactor = 16.0/pow(2*M_PI, 3.0); //gluon degeneracy: color 8 * helicity 2
 
   //center of the profile, max energy initialization
   Xcm = 0.;
