@@ -111,17 +111,23 @@ MakeDensity::MakeDensity(ParameterReader *paraRdr_in)
     // generates look-up table of dN/dy as fct of proj/targ thicknesses
     if(Operation==1 or Operation==3)   //generate event by event profile
     {
-      if(PTinte>0 and MixedMode<=0)
-        mc->makeTable();
-      else if(PTinte<0)
-        mc->makeTable(PTmin, dpt, MaxPT);  //Generate PT-unintegrated dNdydpt Table
-      else if(MixedMode>0)   //output pT-integrated and unintegrated table at the same time
+      if(MixedMode>0)
       {
         cout << "Mixed mode: Calculating two tables!" << endl;
         mc->makeTable();
-        mc->makeTable(PTmin, dpt, MaxPT);  //Generate PT-unintegrated dNdydpt Table
+        mc->makeTable(PTmin, dpt, MaxPT);  //Generate PT-unintegrated dNdydpt Table        
       }
-  
+      else if(PTinte>0)
+        mc->makeTable();
+      else if(PTinte<0)
+        mc->makeTable(PTmin, dpt, MaxPT);  //Generate PT-unintegrated dNdydpt Table
+      else 
+      {
+        cout << "superMC error: unsupport pT runmode:"<<endl;
+        cout << "operation = " << Operation << endl;
+        cout << "MixedMode = " << MixedMode << ", PTinte=" <<PTinte<<endl;
+        exit(-1);
+      }          
     }
     else if(Operation==9 or Operation==2)  //generate eccentricity table
     {
@@ -402,7 +408,7 @@ void MakeDensity::generate_profile_ebe(int nevent)
     mc->getTA2();
 
     bool cutdSdypassFlag = true;
-    if(PTinte>0)
+    if(PTinte>0 or MixedMode>0)
     {
       for(int iy=0;iy<binRapidity;iy++) {
         mc->setDensity(iy, -1);
