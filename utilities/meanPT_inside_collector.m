@@ -1,4 +1,4 @@
-%collect mean pt data
+%collect mean pt data only for protons
 %meanPT file contains two different range of switching times: 2:1:10 and
 %0.4:0.2:1.8. 40 events in each node. Modify this file to adjust to this
 %change.
@@ -30,18 +30,22 @@ for i=1:length(node_list)
     meanptData2 = meanptData(events_per_node*matchingTime_total1+1:end,:);
     %assign data to tables
     for j=1:matchingTime_total1:(events_per_node*matchingTime_total1)
-        meanpt1(k1,:) = meanptData1(j:j+matchingTime_total1-1,end);
+        meanpt1(k1,:) = meanptData1(j:j+matchingTime_total1-1,4)./meanptData1(j:j+matchingTime_total1-1,5);
         k1=k1+1;
     end
     for j=1:matchingTime_total2:(events_per_node*matchingTime_total2)
-        meanpt2(k2,:) = meanptData2(j:j+matchingTime_total2-1,end);
+        meanpt2(k2,:) = meanptData2(j:j+matchingTime_total2-1,4)./meanptData2(j:j+matchingTime_total2-1,5);
         k2=k2+1;
     end
 end
 
 %combine two tables
 meanpt = cat(2, meanpt2, meanpt1);
+
+%tackle with nan
+meanpt(isnan(meanpt))=0;
+
 %save to file
-filename = sprintf('meanPT_%devents.dat',events_total);
+filename = sprintf('meanPT_%devents_inside.dat',events_total);
 dlmwrite(filename, meanpt, 'precision','%10.6f','delimiter','\t')
 disp(['All complete! Data saved to ', filename])
