@@ -14,7 +14,7 @@ from subprocess import call
 
 # run parameters
 event_list = range(1,41)
-matchingTime_list = np.linspace(0.4,1.8,8)
+matchingTime_list = np.linspace(0.4,2.0,9)
 
 # folders locations
 rootDir = path.abspath('..')  #root directory for current node

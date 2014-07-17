@@ -13,7 +13,7 @@ from subprocess import call
 
 # run parameters
 event_list = range(1,41)
-matchingTime_list = np.linspace(0.4,1.8,8)
+matchingTime_list = np.linspace(0.4,2.0,9)
 
 # file locations
 # folders locations
@@ -52,6 +52,6 @@ for event_num in event_list:
 		    sys.exit(-1)
 		# backup files from iS results folder to database
 		for filename in glob.glob(path.join(dN_file_iSfolder, '*.*')):
-    		shutil.copy(filename, dN_file_source)
+			shutil.copy(filename, dN_file_source)
 	print "event %d"%event_num+" processed!"
 print "All %d events processed!"%len(event_list)
