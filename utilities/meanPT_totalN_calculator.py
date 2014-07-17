@@ -82,9 +82,10 @@ def meanPTCalculatorShell():
             allch_num = readParticleNum(allch_integrated_filename, is_data_folder)
             allch_pt = calculateParticleMeanPT(allch_filename,pt_tbl[:,0], pt_tbl[:,1],is_data_folder)
             # consider the degenercy of gluon and photon
-            print "%8.2f \t %10.6e \t %10.6e \t %10.6e "%(tau_s, allch_pt, allch_num, allch_pt/allch_num)
-            meanPT_log.write("%8.2f \t %10.6e \t %10.6e \t %10.6e "%(tau_s, allch_pt, allch_num, allch_pt/allch_num))
-            meanPT_log.flush()
+            # print "%8.2f \t %10.6e \t %10.6e \t %10.6e "%(tau_s, allch_pt, allch_num, allch_pt/allch_num)
+            meanPT_log.write("%8.2f \t %10.6e \t %10.6e \t %10.6e \n"%(tau_s, allch_pt, allch_num, allch_pt/allch_num))
+        print "event %d"%event_num + " processed!"
+        meanPT_log.flush()
     meanPT_log.close()
 
 if __name__ == "__main__":
