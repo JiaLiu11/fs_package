@@ -27,10 +27,10 @@ node_name = rootDir.split('/')[-1]
 sfactor_list = np.loadtxt(path.join(table_location,'sfactor_log.dat'))
 
 
-def readParticleNum(fileName, targetFolder):
+def readParticleInfo(fileName, targetFolder):
     """
-    read particle number from file.
-    return: total particle number
+    read particle pt and numberfrom file.
+    return: total (particle pt, number)
     """
     fileName = path.join(targetFolder, fileName)
     try:
@@ -39,7 +39,8 @@ def readParticleNum(fileName, targetFolder):
         print 'dEcounters: readParticleNum error!'
         print 'Cannot read in particle file: ' + fileName
         sys.exit(-1)
-    return particle_data[0, 1]
+    return (particle_data[0, 2], particle_data[0, 1])
+
 
 
 def calculateParticleMeanPT(fileName, pT_tbl, pTweight_tbl, targetFolder):
@@ -62,7 +63,8 @@ def calculateParticleMeanPT(fileName, pT_tbl, pTweight_tbl, targetFolder):
     dndyptdpt_2pi_tbl = particle_data[:, 2]
     # get particle pt
     total_pt = (dndyptdpt_2pi_tbl * pT_tbl * pT_tbl * pTweight_tbl * 2.0 * np.pi).sum()
-    return total_pt
+    total_num = (dndyptdpt_2pi_tbl * pT_tbl * pTweight_tbl * 2.0 * np.pi).sum()
+    return (total_pt,total_num)
 
 
 
@@ -78,9 +80,7 @@ def meanPTCalculatorShell():
             # get photon pT
             is_data_folder = path.join(database_location, node_name, 'event_%d'%event_num,'%g'%tau_s)
             allch_integrated_filename = 'Charged_ptcut015_10_eta_integrated_vndata.dat'
-            allch_filename = 'Charged_ptcut015_10_eta_vndata.dat'
-            allch_num = readParticleNum(allch_integrated_filename, is_data_folder)
-            allch_pt = calculateParticleMeanPT(allch_filename,pt_tbl[:,0], pt_tbl[:,1],is_data_folder)
+            allch_pt, allch_num = readParticleNum(allch_integrated_filename, is_data_folder)
             # consider the degenercy of gluon and photon
             # print "%8.2f \t %10.6e \t %10.6e \t %10.6e "%(tau_s, allch_pt, allch_num, allch_pt/allch_num)
             meanPT_log.write("%8.2f \t %10.6e \t %10.6e \t %10.6e \n"%(tau_s, allch_pt, allch_num, allch_pt/allch_num))
