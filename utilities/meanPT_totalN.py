@@ -6,7 +6,7 @@
 #   History:
 #   Jul 16, 2014     First version.
 
-import sys, shutil
+import sys, shutil, glob
 from os import path, stat, getcwd, stat, rename, remove, mkdir
 import numpy as np
 from subprocess import call

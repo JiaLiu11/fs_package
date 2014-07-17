@@ -80,7 +80,10 @@ def meanPTCalculatorShell():
             # get photon pT
             is_data_folder = path.join(database_location, node_name, 'event_%d'%event_num,'%g'%tau_s)
             allch_integrated_filename = 'Charged_ptcut015_10_eta_integrated_vndata.dat'
-            allch_pt, allch_num = readParticleNum(allch_integrated_filename, is_data_folder)
+            allch_pt, allch_num = readParticleInfo(allch_integrated_filename, is_data_folder)
+            # calculate mean pt
+            allch_unintegrated_filename = 'Charged_ptcut015_10_eta_vndata.dat'
+            allch_pt, allch_num = calculateParticleMeanPT(allch_unintegrated_filename, pt_tbl[:,0], pt_tbl[:,1], is_data_folder)
             # consider the degenercy of gluon and photon
             # print "%8.2f \t %10.6e \t %10.6e \t %10.6e "%(tau_s, allch_pt, allch_num, allch_pt/allch_num)
             meanPT_log.write("%8.2f \t %10.6e \t %10.6e \t %10.6e \n"%(tau_s, allch_pt, allch_num, allch_pt/allch_num))
