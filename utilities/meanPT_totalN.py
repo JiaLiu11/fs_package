@@ -50,16 +50,8 @@ for event_num in event_list:
 		else:
 		    print 'meanPT_totalN: iInteSp failed!'
 		    sys.exit(-1)
-		# backup files to database
-		totalN_source = path.join(is_location,'results',"Charged_ptcut015_10_eta_vndata.dat")
-		totalN_target = path.join(database_location, node_name, 
-			"event_%d"%event_num, "%g"%tau_s, "Charged_ptcut015_10_eta_vndata.dat")
-		shutil.copy(totalN_source, totalN_target)
-
-		totalN_source = path.join(is_location,
-			'results',"Charged_ptcut015_10_eta_integrated_vndata.dat")
-		totalN_target = path.join(database_location, node_name, 
-			"event_%d"%event_num, "%g"%tau_s, "Charged_ptcut015_10_eta_integrated_vndata.dat")
-		shutil.copy(totalN_source, totalN_target)
+		# backup files from iS results folder to database
+		for filename in glob.glob(path.join(dN_file_iSfolder, '*.*')):
+    		shutil.copy(filename, dN_file_source)
 	print "event %d"%event_num+" processed!"
 print "All %d events processed!"%len(event_list)
