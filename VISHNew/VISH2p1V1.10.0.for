@@ -4858,7 +4858,19 @@ C ************************J.Liu changes**********************************
 
       TEpsP_inside = 0.0  ! count totoal momentum anisotropy for cells inside the freeze-out surface
       TEpsP1_inside = 0.0
-      TEpsP2_inside = 0.0      
+      TEpsP2_inside = 0.0   
+
+      EpsP_corrected = 0.0 ! momentum anisotropy calculated after the imaginary part has been taken out
+      Epsp1_corrected = 0.0 ! numerator
+      Epsp2_corrected = 0.0 ! denominator
+      angle_epsp = 0.0
+
+      TEpsP_corrected = 0.0   ! total momentum anisotropy calculated after the imaginary part has been taken out
+      TEpsp1_corrected = 0.0 
+      TEpsp2_corrected = 0.0 
+      angle_tepsp = 0.0
+
+
 C find the center of the profile 
       XC = 0D0
       YC = 0D0
@@ -4996,11 +5008,25 @@ C find the momentum anisotropy and total momentum anisotropy after the rotation 
         TEpsP2_full_weighted = TEpsP2_full_weighted 
      &     + (TTXX+TTYY)*Ed(I,J,K)*U0(I,J,K)
 
+        angle_epsp = atan2(2.0*TXY, TXX-TYY)/2.0
+        Epsp1_corrected = Epsp1_corrected +(TXX-TYY)*cos(2*angle_epsp)
+     &     +2*TXY*sin(2*angle_epsp)
+        Epsp2_corrected = Epsp2_corrected + (TXX+TYY)
+
+        angle_tepsp = atan2(2.0*TTXY, TTXX-TTYY)/2.0
+        TEpsp1_corrected = TEpsp1_corrected + (TTXX-TTYY)
+     &     *cos(2*angle_tepsp) + 2*TTXY*sin(2*angle_tepsp)
+        TEpsp2_corrected = TEpsp2_corrected + (TTXX+TTYY)
+
+
+
  1100  continue
 
       EpsP_full = EpsP1_full/EpsP2_full
       TEpsP_full = TEpsP1_full/TEpsP2_full
       TEpsP_full_weighted = TEpsP1_full_weighted/TEpsP2_full_weighted
+      EpsP_corrected  =Epsp1_corrected/Epsp2_corrected 
+      TEpsP_corrected =TEpsp1_corrected/TEpsp2_corrected 
 
 C output transverse plane averaged energy density, pi_munu tensor for check
 C format Time - tau0, EpsP, EdAvg, Pi00, Pi01, Pi02, Pi11, Pi12, Pi22, Pi33
@@ -5036,10 +5062,11 @@ C        write(*, *) Output_avg, ' ', total_points
         Pi33Avg = Pi33Avg/total_points*HbarC     
         EdAvg = TotalE/total_points*HbarC   ! unit: fm^-4-->GeV/fm^-3 
 
-        Write(3423,'(1f12.3, 14e20.8)') Time-TT0, EpsP,
+        Write(3423,'(1f12.3, 16e20.8)') Time-TT0, EpsP,
      &    EdAvg, Vaver, Pi00Avg, Pi01Avg, Pi02Avg, 
      &    Pi11Avg, Pi12Avg, Pi22Avg, Pi33Avg, EpsP_full,
-     &    TEpsP_full, TEpsP_full_weighted, TEpsP_inside
+     &    TEpsP_full, TEpsP_full_weighted, TEpsP_inside,
+     &    EpsP_corrected, TEpsP_corrected
       end if
 C ***************************J.Liu changes end*******************
 
