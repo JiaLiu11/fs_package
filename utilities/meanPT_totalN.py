@@ -28,11 +28,13 @@ dN_file_target = path.join(is_location,'results','dN_ptdptdphidy.dat')
 for event_num in event_list:
 	for tau_s in matchingTime_list:
 		# copy dNdyptdptdphi file from database to current iS
-		dN_file_source = path.join(database_location, node_name, 
+		dN_file_sourceFolder = path.join(database_location, node_name, 
+			"event_%d"%event_num, "%g"%tau_s)
+		dN_file_sourceFile = path.join(database_location, node_name, 
 			"event_%d"%event_num, "%g"%tau_s, "dN_ptdptdphidy.dat")
 		shutil.rmtree(dN_file_iSfolder)# clear iS results folder
 		mkdir(dN_file_iSfolder)
-		shutil.copy(dN_file_source, dN_file_target)
+		shutil.copy(dN_file_sourceFile, dN_file_target)
 
 		# run resonance decay
 		reso_cmd = is_location+'/./resonance.e >log.dat'
@@ -52,6 +54,6 @@ for event_num in event_list:
 		    sys.exit(-1)
 		# backup files from iS results folder to database
 		for filename in glob.glob(path.join(dN_file_iSfolder, '*.*')):
-			shutil.copy(filename, dN_file_source)
+			shutil.copy(filename, dN_file_sourceFolder)
 	print "event %d"%event_num+" processed!"
 print "All %d events processed!"%len(event_list)
