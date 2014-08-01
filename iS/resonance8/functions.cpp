@@ -288,7 +288,7 @@ void   readin(char filename[FILEDIM], int* particlemax, int* decaymax)
 void   readspec(char  specfile[FILEDIM], int *particlemax, int *decaymax)
 {
         FILE    *spec;
-        char    resofile[FILEDIM] = "EOS/pdg.dat";
+        char    resofile[FILEDIM] = "EOS/pdg-full.dat";
         int i, j, k, pn, npa = 0;
         int mon, nphi, npt;
         double dum, dum1, dum2;
