@@ -5036,7 +5036,8 @@ C        write(*, *) Output_avg, ' ', total_points
         Pi33Avg = Pi33Avg/total_points*HbarC     
         EdAvg = TotalE/total_points*HbarC   ! unit: fm^-4-->GeV/fm^-3 
 
-        Write(3423,'(1f12.3, 14e20.8)') Time-TT0, EpsP,
+
+        Write(3423,'(1f12.3, 18e26.8)') Time-TT0, EpsP,
      &    EdAvg, Vaver, Pi00Avg, Pi01Avg, Pi02Avg, 
      &    Pi11Avg, Pi12Avg, Pi22Avg, Pi33Avg, EpsP_full,
      &    TEpsP_full, TEpsP_full_weighted, TEpsP_inside
