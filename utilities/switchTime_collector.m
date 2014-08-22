@@ -2,6 +2,8 @@
 % different matching times combine with switchTime_plotter.m to visulize data
 
 % Revise history: 
+%       Aug.20,2014   collect real and imaginary part of epsilon_p and
+%       epsilon_p'
 %       Jun.04, 2014   path updates and integrated to fs_package
 %       Nov.12.2013   clean temporary variables and Pi00_scaled_*,
 %            Pi1122_scaled_*, Pi11_*, Pi22_*, before saving to the data file.
@@ -14,7 +16,7 @@ clc
 % Specify the info for running
 nodes_list = 1:10;   
 events_per_node = 40;   %number of events in one node
-tau =[1:1:10];     %matching time list
+tau =[0.4:0.2:1.8];    %matching time list
 tau0 = 0.01;           %inital time of free-streaming
 finding_accuracy = 1e-8;  %relate to matchine error of comparing two float numbers
 
@@ -54,6 +56,11 @@ Pi33_cell = cell(mtimes_total, 1);
 TEpsP_full_weighted_cell = cell(mtimes_total, 1);
 TEpsP_inside_cell = cell(mtimes_total, 1);
 
+EpsP_mag_cell = cell(mtimes_total, 1);
+EpsP_angle_cell = cell(mtimes_total, 1);
+TEpsP_mag_cell = cell(mtimes_total, 1);
+TEpsP_angle_cell = cell(mtimes_total, 1);
+
 for k=1:mtimes_total
     if tau(k)<0.59
         evo_time_cell{k} = [tau(k):0.002:0.588, 0.59:0.02:16.0];
@@ -77,6 +84,11 @@ for k=1:mtimes_total
     Pi33_cell{k}  = zeros(events_total, evo_time_total);
     TEpsP_full_weighted_cell{k} = zeros(events_total, evo_time_total);
     TEpsP_inside_cell{k} = zeros(events_total, evo_time_total);
+    
+    EpsP_mag_cell{k} = zeros(events_total, evo_time_total);
+    EpsP_angle_cell{k} = zeros(events_total, evo_time_total);
+    TEpsP_mag_cell{k} = zeros(events_total, evo_time_total);
+    TEpsP_angle_cell{k} = zeros(events_total, evo_time_total);
 end 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -92,7 +104,7 @@ for i=1:nodes_total
         % Loop over matching times
         for k=1:mtimes_total
             anisotrop_fileName = strcat(event_folder, '/',...
-                num2str(tau(k)),'/', 'avg_points.dat');
+                num2str(tau(k)),'/', 'avg_points_corrected.dat'); %'avg_points.dat' is still in the folder for backup
             anisotrop_raw = load(anisotrop_fileName);
             
             TEpsP_fileName= strcat(event_folder, '/',...
@@ -134,6 +146,15 @@ for i=1:nodes_total
             Pi33_cell{k}(events_count, time_min_idx:time_max_idx) = anisotrop_raw(2:end, 11);
             TEpsP_full_weighted_cell{k}(events_count, time_min_idx:time_max_idx) = anisotrop_raw(2:end, 14);
             TEpsP_inside_cell{k}(events_count, time_min_idx:time_max_idx) = anisotrop_raw(2:end, 15); 
+            
+            EpsP_mag_cell{k}(events_count, time_min_idx:time_max_idx) = ...
+                sqrt(anisotrop_raw(2:end, 16).^2 +anisotrop_raw(2:end, 17).^2); 
+            EpsP_angle_cell{k}(events_count, time_min_idx:time_max_idx) = ...
+                atan2( anisotrop_raw(2:end, 17), anisotrop_raw(2:end, 16)); 
+            TEpsP_mag_cell{k}(events_count, time_min_idx:time_max_idx) = ...
+                sqrt(anisotrop_raw(2:end, 18).^2 +anisotrop_raw(2:end, 19).^2); 
+            TEpsP_angle_cell{k}(events_count, time_min_idx:time_max_idx)=  ...
+                atan2( anisotrop_raw(2:end, 19), anisotrop_raw(2:end, 18)); 
         end
         events_count = events_count + 1;
     end
@@ -169,6 +190,10 @@ Pi33_mean = cell(mtimes_total, 1);
 TEpsP_full_weighted_mean = cell(mtimes_total, 1);
 TEpsP_inside_mean = cell(mtimes_total, 1);
 
+EpsP_mag_mean = cell(mtimes_total, 1);
+TEpsP_mag_mean = cell(mtimes_total, 1);
+
+
 Pi00_std = cell(mtimes_total, 1);
 Pi01_std = cell(mtimes_total, 1);
 Pi02_std = cell(mtimes_total, 1);
@@ -178,6 +203,9 @@ Pi22_std = cell(mtimes_total, 1);
 Pi33_std = cell(mtimes_total, 1);
 TEpsP_full_weighted_std = cell(mtimes_total, 1);
 TEpsP_inside_std = cell(mtimes_total, 1);
+
+EpsP_mag_std = cell(mtimes_total, 1);
+TEpsP_mag_std = cell(mtimes_total, 1);
 
 for i=1:mtimes_total
     evo_time_total = length(evo_time_cell{i});
@@ -205,6 +233,8 @@ for i=1:mtimes_total
     Pi33_mean{i} = zeros(1, evo_time_total);
     TEpsP_full_weighted_mean{i} = zeros(1, evo_time_total);
     TEpsP_inside_mean{i} = zeros(1, evo_time_total);
+    EpsP_mag_mean{i} = zeros(1, evo_time_total);
+    TEpsP_mag_mean{i} = zeros(1, evo_time_total);
     
     Pi00_std{i} = zeros(1, evo_time_total);
     Pi01_std{i} = zeros(1, evo_time_total);
@@ -215,6 +245,8 @@ for i=1:mtimes_total
     Pi33_std{i} = zeros(1, evo_time_total);
     TEpsP_full_weighted_std{i} = zeros(1, evo_time_total);
     TEpsP_inside_std{i} = zeros(1, evo_time_total);
+    EpsP_mag_std{i} = zeros(1, evo_time_total);
+    TEpsP_mag_std{i} = zeros(1, evo_time_total);    
     
     for j=1:evo_time_total
         % extract non-zero elements of momentum anisotropy
@@ -336,7 +368,24 @@ for i=1:mtimes_total
         end
         TEpsP_inside_mean{i}(j) = mean(pi1122_scaled_nonzero, 1);
         TEpsP_inside_std{i}(j) = std(pi1122_scaled_nonzero, 0, 1);          
+ 
         
+        % extract non-zero elements of momentum anisotropy
+        epsp_mag_nonzero=nonzeros(EpsP_mag_cell{i}(:, j));
+        if isempty(epsp_mag_nonzero)  %all events end from this time
+            break
+        end
+        EpsP_mag_mean{i}(j) = mean(epsp_mag_nonzero, 1);
+        EpsP_mag_std{i}(j) = std(epsp_mag_nonzero, 0, 1);              
+
+        
+        % extract non-zero elements of total momentum anisotropy
+        tepsp_mag_nonzero=nonzeros(TEpsP_mag_cell{i}(:, j));
+        if isempty(tepsp_mag_nonzero)  %all events end from this time
+            break
+        end
+        TEpsP_mag_mean{i}(j) = mean(tepsp_mag_nonzero, 1);
+        TEpsP_mag_std{i}(j) = std(tepsp_mag_nonzero, 0, 1);            
     end
 end
 disp('Post processing complete!');
