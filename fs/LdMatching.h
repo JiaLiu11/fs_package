@@ -52,7 +52,8 @@ private:
     bool outputData;
     bool loadTmnTable;
     string Result_Dir, Dst_Folder;
-    int phin_range;  //range of phi_n: 0 to phin_range
+    int phin_range, rm_range;  //range of phi_n: 0 to phin_range
+                            // range of r_m: 0 to rm_range
     void findCM_ed(const int iRap = 0);  //find the center of the profile
     //A general function to shift energy density table to a new center (x0, y0) and/or rotate phi angle clockwisely
     double getShiftedProfile(double ***data, int i, int j, double x0, double y0, 
@@ -86,7 +87,7 @@ public:
     void CalVis2Ideal_Ratio(const int iRap=0);
     void GenerateSdTable(const int nrap = 1);
     double getEpx(int n, double* phin_tbl, int iRap = 0);         //calculate eccentricity in the free-streaming stage
-
+    double getEpxmn(int m, int n, double** phin_tbl, int iRap=0); //calculate higher order eccentricities
     // void OutputTable(const char *filename, const int iRap);
     void OutputTable_ux(const char *filename, int iRap=0);
     void OutputTable_uy(const char *filename, int iRap=0);

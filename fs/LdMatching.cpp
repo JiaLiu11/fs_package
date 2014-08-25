@@ -54,6 +54,7 @@ LdMatching::LdMatching(ParameterReader *params_in, string result_dir)
 
   dNd2rdyTable = 0;
   phin_range = 10;
+  rm_range = 10;
 
   EOS_type = lm_params->getVal("iEOS");
   if(EOS_type==2)
@@ -221,6 +222,7 @@ void LdMatching::MultiMatching(string filename)
     ostringstream filename_stream_ppi;
     ostringstream ztag;  //folder name for rapidity
     ostringstream filename_stream_epx;
+    ostringstream filename_stream_epxmn;
     for(int iy=0;iy<nRap;iy++)
     {
       Dst_foler_iy.str("");
@@ -271,7 +273,33 @@ void LdMatching::MultiMatching(string filename)
       }
       of_epx0 << endl;
       of_epx0.close();  
-      delete [] event_phin;                
+      delete [] event_phin;    
+
+    // find higher order eccentricities at initial time Tau0 
+      filename_stream_epxmn.str("");
+      filename_stream_epxmn << Dst_foler_iy.str() <<"/Epxmn_initial.dat";
+      ofstream of_epx1;
+      of_epx1.open(filename_stream_epxmn.str().c_str(), std::ios_base::app);
+      double** event_phimn;
+      event_phimn = new double* [rm_range];
+      for(int irm=0;irm<nRap;irm++) 
+      {
+        event_phimn[irm] = new double [phin_range];
+        for(int iphin=0;iphin<phin_range;iphin++)
+          event_phimn[irm][iphin]=0.0;
+      }       
+      for(int imorder = 0; imorder<rm_range; imorder++)
+      {
+        of_epx1 << setw(5) << setprecision(3) << imorder;
+        for(int inorder = 0; inorder<phin_range; inorder++)
+        {
+          of_epx1 << setw(18) << setprecision(9)<< getEpxmn(imorder, inorder, event_phimn, iy);
+          of_epx1 << setw(18) << setprecision(9)<< event_phimn[imorder][inorder];
+        }
+        of_epx1 << endl;
+      }
+      of_epx1.close();  
+      delete [] event_phimn;                  
     }//<->for iy=0:nRap
   }//<->if outputData==true
  
@@ -1621,6 +1649,57 @@ double LdMatching::getEpx(int nth_order, double* phin_tbl, int iRap)
   //     <<"epx real=" << epx_nu_real <<", epx imaginary=" << epx_nu_img << endl;
   return Epx;
 }
+
+
+double LdMatching::getEpxmn(int mth_order, int nth_order, double** phin_tbl, int iRap)
+// Epx = -{r^m e^in\phi}/{r^m}, ref: Gardim et.al. arxiv: 1111.6538
+// here we use lab frame energy density, since Landau matching generates flow, in order to transform energy
+// density to the lab frame, gamma factor should be included.
+// return epx, and save the angle to table phin_tbl.
+{
+  //cout<<"Calculating spatial eccentricity Epx----------------"<<endl;
+  double Epx=0.0;
+
+  double epx_nu_real = 0.0;  //numerator of epx
+  double epx_nu_img = 0.0;
+  double Epx_angle = 0.0;
+  double epx_dn = 0.0;  //denominator of epx
+  
+  for(int i=0; i<Maxx; i++)
+  {
+      for(int j=0; j<Maxy; j++)
+     {
+       double x = Xmin + dx*i - Xcm[iRap];  //center the profile
+       double y = Ymin + dy*j - Ycm[iRap];
+       double phi = atan2(y,x);
+
+       double ed_temp = DataTable->GetEd(iRap, i, j);
+       double ux_temp = DataTable->GetUm(iRap, i, j, 1);
+       double uy_temp = DataTable->GetUm(iRap, i, j, 2);
+       double gamma = sqrt(1 + ux_temp * ux_temp + uy_temp * uy_temp);
+       double weight = ed_temp * gamma;
+
+       epx_nu_real += pow(x*x + y*y, double(mth_order)/2.) 
+                  * cos(nth_order * phi) * weight * dx*dy;
+       epx_nu_img += pow(x*x + y*y, double(mth_order)/2.) 
+                  * sin(nth_order * phi) * weight * dx*dy;
+       epx_dn += pow(y*y + x*x, double(mth_order)/2.)* weight * dx*dy;
+     }       
+  }//<-> for i=0:Maxx
+  
+  Epx = sqrt( epx_nu_real * epx_nu_real + epx_nu_img * epx_nu_img )
+       /(epx_dn + 1e-18);
+  if(nth_order == 0)
+    Epx_angle = 0.;
+  else
+    Epx_angle = atan2( epx_nu_img, (epx_nu_real + 1e-18))/nth_order + M_PI/nth_order;
+  // write down the angle
+  phin_tbl[mth_order][nth_order] = Epx_angle;
+  // cout<<"Spatial Eccentricity complete!"<<endl
+  //     <<"epx real=" << epx_nu_real <<", epx imaginary=" << epx_nu_img << endl;
+  return Epx;
+}
+
 
 void LdMatching::OutputTable_ux(const char *filename, int iRap)
 {
