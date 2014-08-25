@@ -282,6 +282,7 @@ void LdMatching::MultiMatching(string filename)
       of_epx1.open(filename_stream_epxmn.str().c_str(), std::ios_base::app);
       double** event_phimn;
       event_phimn = new double* [rm_range];
+
       for(int irm=0;irm<rm_range;irm++) 
       {
         event_phimn[irm] = new double [phin_range];
