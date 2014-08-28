@@ -350,9 +350,9 @@ CSHEN======output OSCAR file Header=========================================
 CSHEN======output OSCAR file Header end=====================================
 
 CSHEN======set up output file for hydro evolution history===================
-      if(IhydroJetoutput .eq. 1) then
-         Call setHydroFiles(NX0, NX, DX, 5, NY0, NY, DY, 5, T0, DT, 5)
-      endif
+C       if(IhydroJetoutput .eq. 1) then
+C          Call setHydroFiles(NX0, NX, DX, 5, NY0, NY, DY, 5, T0, DT, 5)
+C       endif
 
       CALL CPU_TIME(cpu_start) !Tic
       Call Mainpro(NX0,NY0,NZ0,NX,NY,NZ,NXPhy0,NYPhy0,
@@ -1244,16 +1244,16 @@ CSHEN====END====================================================================
          enddo
       endif
       
-      if(IhydroJetoutput .eq. 1) then
-!        output hydro infos
-!        Units: [ed]=GeV/fm^3, [sd]=fm^-3, [p]=GeV/fm^3, [T]=GeV, [Vx]=[Vy]=1
-!        Units: [Pi]=GeV/fm^3, [PPi]=GeV/fm^3
-         Call writeHydroBlock(ITime-1, Ed*HbarC, Sd, PL*HbarC,
-     &      Temp*HbarC,Vx, Vy, Pi00*HbarC, Pi01*HbarC, Pi02*HbarC, 
-     &      Pi02*HbarC*0.0d0, Pi11*HbarC, Pi12*HbarC, Pi12*HbarC*0.0d0,
-     &      Pi22*HbarC, Pi22*HbarC*0.0d0, Pi33*HbarC, PPI*HbarC)
-!        output hydro infos, end
-      endif
+C       if(IhydroJetoutput .eq. 1) then
+C !        output hydro infos
+C !        Units: [ed]=GeV/fm^3, [sd]=fm^-3, [p]=GeV/fm^3, [T]=GeV, [Vx]=[Vy]=1
+C !        Units: [Pi]=GeV/fm^3, [PPi]=GeV/fm^3
+C          Call writeHydroBlock(ITime-1, Ed*HbarC, Sd, PL*HbarC,
+C      &      Temp*HbarC,Vx, Vy, Pi00*HbarC, Pi01*HbarC, Pi02*HbarC, 
+C      &      Pi02*HbarC*0.0d0, Pi11*HbarC, Pi12*HbarC, Pi12*HbarC*0.0d0,
+C      &      Pi22*HbarC, Pi22*HbarC*0.0d0, Pi33*HbarC, PPI*HbarC)
+C !        output hydro infos, end
+C       endif
 
 CSHEN===========================================================================
 C====output the OSCAR body file from hydro evolution============ ===============
