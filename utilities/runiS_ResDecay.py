@@ -8,7 +8,7 @@
 #   Jul 28, 2014     First version.
 
 import sys, shutil, glob
-from os import path, stat, getcwd, stat, rename, remove, mkdir
+from os import path, stat, getcwd, stat, rename, remove, mkdir, makedirs
 import numpy as np
 from subprocess import call
 
@@ -34,10 +34,6 @@ for event_num in event_list:
 			"event_%d"%event_num, "%g"%tau_s)
 		dN_file_sourceFile = path.join(database_location, source_node_name, 
 			"event_%d"%event_num, "%g"%tau_s, "dN_ptdptdphidy.dat")
-
-		# backup folder
-		dN_file_targetFolder = path.join(database_location, node_name, 
-			"event_%d"%event_num, "%g"%tau_s)
 
 		if(path.isfile(dN_file_sourceFile)):
 			shutil.rmtree(dN_file_iSfolder)# clear iS results folder
@@ -74,6 +70,16 @@ for event_num in event_list:
 			    print 'runiS_ResDecay: iInteSp failed!'
 			    sys.exit(-1)
 			# backup files from iS results folder to database
+			# create backup folder
+			dN_file_targetFolder = path.join(database_location, node_name, 
+				"event_%d"%event_num, "%g"%tau_s)
+			if path.exists(dN_file_targetFolder):
+				try:
+					call("rm -rf *", shell=True, cwd=dN_file_targetFolder)
+				except OSError:
+					pass
+			else:
+				makedirs(dN_file_targetFolder)
 			for files in glob.glob(path.join(dN_file_iSfolder, '*.*')):
 				shutil.copy(files, dN_file_targetFolder)
 		else:
