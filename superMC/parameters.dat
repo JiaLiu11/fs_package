@@ -3,11 +3,11 @@
 ###############################################
 
 # Model Optns           
-which_mc_model = 1        # (1) MC-CGC 
+which_mc_model = 5        # (1) MC-CGC 
                           # (5) MC-Glb            
 
 # Sub-Model Optns                 
-sub_model = 7             # CGC-> (7) KLN model model described in
+sub_model = 1             # CGC-> (7) KLN model model described in
                           # CGC-> (100) rcbk model described in
                           # Glb-> (1) WN entropy deposited at WN positions. 
                           # Glb-> (2) WN entropy deposited (fractionally) amongst 
@@ -58,13 +58,13 @@ cutdSdy_upperBound =  10000000.0       # upper bound of the allowed total entrop
 
 
 # Monte Carlo Optns
-nev = 40                  # Number of collision events simulated
+nev = 10000                  # Number of collision events simulated
 randomSeed = -1           # If randomSeed < 0 then CPU time is used to seed
-backup_number = 10000     # Backs up the averaged profile every "n" events. 0 means 
+backup_number = 10001     # Backs up the averaged profile every "n" events. 0 means 
                           # every step. Use a neg number to turn it off
 
 # Operation Mode Optns
-operation = 1             # (1) Generate n transverse density profiles for n events 
+operation = 3             # (1) Generate n transverse density profiles for n events 
                           # (input for event-by-event hydro)
                           # (2) Generate n transverse density profiles for n events 
                           # and their corresponding binary collision table and eccentricities
