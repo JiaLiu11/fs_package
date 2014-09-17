@@ -17,11 +17,12 @@ rootDir = runcode.rootDir
 backupDir = path.join(rootDir, 'localdataBase')
 totaldEdyExpect = 1599.4  #from single-shot viscous hydro starting at 0.6fm/c, thermal pion+ num 210.
 event_number = 99
-mtime_list = linspace(1, 4, 4) 
+mtime_list = linspace(0.4,2.0,9) 
 pre_process_decdat2_file = True
 #mtime_list = [10]
 sfactorL = 0.01
 sfactorR = 20.0
+rescale_factor_guess = 9.0 #initial guess of rescaling factor
 
 def getParamsFromCML(parserCML):
 	""" get the matching time from command line
@@ -65,84 +66,85 @@ def adjustSfactorShell():
 	"""
 	sfactor_log = open(path.join(rootDir,'sfactor_log.dat'), 'a')
 	sfactor_log.write("#Matching Time         sfactor                 totaldEdy  \n")
+	rescale_factor_used = rescale_factor_guess
 
-        for matching_time in mtime_list:
-    	    #Prepare the data for hydro run
-    	    rescale_factor = 9.0
-    	    rescale_factor_used = 9.0
-            lmDataDirectory = path.join(runcode.lmDirectory, 'data/result/event_' \
-                                        + str(event_number)+"/"+ "%g" %matching_time)
-            runcode.cleanUpFolder(runcode.hydroInitialDirectory)
-            runcode.moveLmData2Hydro(lmDataDirectory, runcode.hydroInitialDirectory, "%g" %matching_time)
-	    xl = sfactorL
-	    xr = sfactorR            
-	    while 1:
-		# use bisect at late matching
-		if(matching_time>=7.9):
-			runcode.norm_factor = (xl+xr)/2.0
-		else:
-			runcode.norm_factor = rescale_factor
+	for matching_time in mtime_list:
+		rescale_factor = rescale_factor_used
+		#Prepare the data for hydro run		
+		lmDataDirectory = path.join(runcode.lmDirectory, 'data/result/event_' \
+		                            + str(event_number)+"/"+ "%g" %matching_time)
+		runcode.cleanUpFolder(runcode.hydroInitialDirectory)
+		runcode.moveLmData2Hydro(lmDataDirectory, runcode.hydroInitialDirectory, "%g" %matching_time)
+		xl = sfactorL
+		xr = sfactorR            
+		while 1:
+			# use bisect at late matching
+			if(matching_time>=7.9):
+				runcode.norm_factor = (xl+xr)/2.0
+			else:
+				runcode.norm_factor = rescale_factor
 
-		runcode.runHydro(matching_time, runcode.hydroDirectory, 0.0)
-		runcode.cleanUpFolder(runcode.iSDataDirectory)
-		runcode.moveHydroData2iS(runcode.hydroResultDirectory, runcode.iSDataDirectory)
+			runcode.runHydro(matching_time, runcode.hydroDirectory, 0.0)
+			runcode.cleanUpFolder(runcode.iSDataDirectory)
+			runcode.moveHydroData2iS(runcode.hydroResultDirectory, runcode.iSDataDirectory)
 
-		#run iS to get the total energy
-		decdat_file = path.join(runcode.iSDataDirectory, 'decdat2.dat')
-		if(stat(decdat_file).st_size==0) :  
-			print 'decdat.dat is empty! Only calculate thermalization surface. \n'	
-			dEdphipFile = path.join(runcode.hydroInitialDirectory, 'dEdydphip_kln.dat')		
-			totaldEdyTest =dEcounters.dEdyTotalInital(dEdphipFile, \
-				runcode.norm_factor)		
-		else:
-			if pre_process_decdat2_file is True:
-				runcode.preProcessDecdat2File(runcode.iSDataDirectory)
-				print 'adjustsfactor: use preprocessed decdat2 file!'
-	   		runcode.runiS(runcode.iSDirectory)
-			#get the current total energy
-			dEdyd2rdphipFile = path.join(runcode.hydroInitialDirectory, 'dEd2rdphip_kln.dat')
-			edFile = path.join(runcode.hydroInitialDirectory, 'ed_profile_kln.dat')
+			#run iS to get the total energy
+			decdat_file = path.join(runcode.iSDataDirectory, 'decdat2.dat')
+			if(stat(decdat_file).st_size==0) :  
+				print 'decdat.dat is empty! Only calculate thermalization surface. \n'	
+				dEdphipFile = path.join(runcode.hydroInitialDirectory, 'dEdydphip_kln.dat')		
+				totaldEdyTest =dEcounters.dEdyTotalInital(dEdphipFile, \
+					runcode.norm_factor)		
+			else:
+				if pre_process_decdat2_file is True:
+					runcode.preProcessDecdat2File(runcode.iSDataDirectory)
+					print 'adjustsfactor: use preprocessed decdat2 file!'
+				runcode.runiS(runcode.iSDirectory)
+				#get the current total energy
+				dEdyd2rdphipFile = path.join(runcode.hydroInitialDirectory, 'dEd2rdphip_kln.dat')
+				edFile = path.join(runcode.hydroInitialDirectory, 'ed_profile_kln.dat')
+	
+				totaldEdyTest = getTotaldEdyOnly(dEdyd2rdphipFile, edFile, runcode.norm_factor, \
+					runcode.iSDataDirectory, 'dEdydphipThermal.dat',\
+					runcode.iSDirectory, runcode.iSDataDirectory, 'dEdydphipFO.dat')   
 
-			totaldEdyTest = getTotaldEdyOnly(dEdyd2rdphipFile, edFile, runcode.norm_factor, \
-				runcode.iSDataDirectory, 'dEdydphipThermal.dat',\
-				runcode.iSDirectory, runcode.iSDataDirectory, 'dEdydphipFO.dat')   
+			#Keep a log	
+			sfactor_log.write("%6.2f       %20.8f        %20.4f\n"   \
+				%(matching_time, runcode.norm_factor, totaldEdyTest))
+			sfactor_log.flush()
 
-	  	#Keep a log	
-		sfactor_log.write("%6.2f       %20.8f        %20.4f\n"   \
-	   		       %(matching_time, runcode.norm_factor, totaldEdyTest))
-	   	sfactor_log.flush()
+			#conditions for ending the loop
+			if( abs(totaldEdyTest-totaldEdyExpect) < 10):#debug
+				sfactor_log.write("#Finally the factor:\n")
+				sfactor_log.write("%6.2f       %20.8f        %20.4f\n"   \
+					%(matching_time, runcode.norm_factor, totaldEdyTest))
+				#backup the run files
+				event_folder_tag = 'event_' + '%g' %event_number
+				sub_folder_tag = '%g' %matching_time
+				data_backup_dir = path.join(backupDir, \
+					event_folder_tag, sub_folder_tag)
+				runcode.backupEachRun(runcode.iSDataDirectory, data_backup_dir)
+				print 'Current run completed for event ' + str(event_number) 
+				runlog_file = path.join(runcode.iSDataDirectory, 'runlog.dat')
+				# runlog_newName = 'runlog_' + str(matching_time) +'_'    \
+				#         + '%g' %rescale_factor_used + '.dat'
+				# runlog_newFile = path.join(runcode.rootDir, runlog_newName)
+				# shutil.move(runlog_file, runlog_newFile)
 
-        	#conditions for ending the loop
-		if( abs(totaldEdyTest-totaldEdyExpect) < 10):#debug
-		    sfactor_log.write("#Finally the factor:\n")
-	   	    sfactor_log.write("%6.2f       %20.8f        %20.4f\n"   \
-	                %(matching_time, runcode.norm_factor, totaldEdyTest))
-	   	    #backup the run files
-	   	    event_folder_tag = 'event_' + '%g' %event_number 
-                    sub_folder_tag = '%g' %matching_time
-		    data_backup_dir = path.join(backupDir, \
-          	       event_folder_tag, sub_folder_tag)
-		    runcode.backupEachRun(runcode.iSDataDirectory, data_backup_dir)
-		    print 'Current run completed for event ' + str(event_number) 
-   #          runlog_file = path.join(runcode.iSDataDirectory, 'runlog.dat')
-			# runlog_newName = 'runlog_' + str(matching_time) +'_'    \
-			#         + '%g' %rescale_factor_used + '.dat'
-			# runlog_newFile = path.join(runcode.rootDir, runlog_newName)
-			# shutil.move(runlog_file, runlog_newFile)
-		    break	
-
-	   	#get the used rescale factor for the next run
-	   	rescale_factor_used = runcode.norm_factor
-	   	if(matching_time>=7.9):
-			if(totaldEdyTest-totaldEdyExpect<0):
-				xl = rescale_factor_used
-				xr = xr
-			elif(totaldEdyTest-totaldEdyExpect>0):
-				xl = xl
-				xr = rescale_factor_used
-		else:   	
-			rescale_factor = getRescaleFactor(totaldEdyTest) * rescale_factor_used
-			                	
+				#get the used rescale factor for the matching time run
+				rescale_factor_used = runcode.norm_factor
+				break	
+			# get the guess for next run
+			if(matching_time>=7.9):
+				if(totaldEdyTest-totaldEdyExpect<0):
+					xl = runcode.norm_factor
+					xr = xr
+				elif(totaldEdyTest-totaldEdyExpect>0):
+					xl = xl
+					xr = runcode.norm_factor
+			else:   	
+				rescale_factor = getRescaleFactor(totaldEdyTest) * runcode.norm_factor
+	
 	sfactor_log.close()
 
 if __name__ == "__main__":
