@@ -31,7 +31,7 @@ Table pT_tab("tables/pT_gauss_table.dat");
 int pT_tab_length = pT_tab.getNumberOfRows();
 Table phi_tab("tables/phi_gauss_table.dat");
 int phi_tab_length = phi_tab.getNumberOfRows();
-Table eta_table("tables/particle_eta_table.dat");
+Table eta_table("tables/particle_eta_0_0.8_table.dat");
 int eta_table_length = eta_table.getNumberOfRows();
 
 
