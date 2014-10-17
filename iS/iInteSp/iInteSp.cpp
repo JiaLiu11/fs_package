@@ -449,5 +449,6 @@ int main()
 
     calculate_and_output_spectra_and_vn(dN_dy, total_N, "Charged_ptcut015_10", 0, 9, 0.15, 10, 6);
     calculate_and_output_spectra_and_vn(dN_dy, total_N, "Charged_ptcut02_5", 0, 9, 0.2, 5, 6);
+    calculate_and_output_spectra_and_vn(dN_dy, total_N, "Charged_ptcut0510", 0, 9, 0.5, 10, 6);
 }
 
