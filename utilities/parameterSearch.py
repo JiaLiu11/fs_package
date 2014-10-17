@@ -45,6 +45,21 @@ sfactorR = 20.0
 rescale_factor_guess = 9.0 #initial guess of rescaling factor
 
 
+def runlm(event_num, tau0, taumin, taumax, dtau, lmDirectory):
+    """
+    Run Landau matching code for a single event
+    """
+    lm_cmd = lmDirectory + "/./lm.e " + 'event_mode='+str(event_num) \
+        + ' tau0='+str(tau0) +' taumin='+str(taumin) + ' taumax=' +str(taumax) \
+        + ' dtau='+str(dtau)
+    lm_retcode = call(lm_cmd, shell=True, cwd=lmDirectory)
+    if lm_retcode ==0:
+      print 'Freestreaming and Landau Matching completes!'
+    else :
+      print 'Freestreaming and Landau Matching stops unexpectly!'
+      sys.exit(-1)
+
+
 def runHydro(mth_time, norm_factor, hydro_dir, inital_phi, etas, edec):
     """
     run hydro code to get the freeze-out surface
@@ -104,6 +119,10 @@ def getTotaldEdyOnly(dEdyd2rdphipFile, edFile, sfactor, dEdydphipthermFolder, \
     return totaldEdy
 
 def parameterSearchShell():
+	# get free-streamed data
+	runlm(99, 0.01, matching_time, matching_time+0.01, 0.01, runcode.lmDirectory)
+
+	# move lm data to hydro
 	lmDataDirectory = path.join(runcode.lmDirectory, 'data/result/event_' \
 	                            + str(event_number)+"/"+ "%g" %matching_time)
 	runcode.cleanUpFolder(runcode.hydroInitialDirectory)
