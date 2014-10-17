@@ -21,11 +21,10 @@ import runcode, dEcounters
 import sys, shutil
 
 # parameters
-taus_list = np.linspace(0.4,2.0,9) 
-eta_s_list= np.linspace(0.08, 0.4, 9)
-tdec_list = np.linspace(100, 160, 7) #MeV
-edec_list = np.array([0.097561,0.135765,0.1822,0.237036,
-	0.300612,0.373435,0.456113]) # GeV/fm^3, EOS 95pceV0
+taus_list = np.array([0.475,0.573,0.641,0.745, 0.860, 0.921, 1.099, 1.153, 1.261, 1.345])
+eta_s_list= np.array([0.0902,0.1057,0.1300,0.1413, 0.1621, 0.1911, 0.2091, 0.2356, 0.2448, 0.2615])
+tdec_list = np.array([101.8,113.1,120.3,122.3, 129.2, 137.3, 143.9, 155.2, 158.3, 167.8]) #MeV
+edec_list = np.array([0.103833,0.149274,0.183721,0.194059,0.197228,0.28256,0.32788,0.415157,0.441336,0.572172]) # GeV/fm^3, EOS 95pceV0
 
 # folder structure
 rootDir = path.abspath("..") #assume this file is placed under utilities/
@@ -66,7 +65,7 @@ def runHydro(mth_time, norm_factor, hydro_dir, inital_phi, etas, edec):
     """
     #scale the profile
     norm_factor_now = "%.6f" %norm_factor
-    tau0 = "%.2f" %mth_time
+    tau0 = "%.3f" %mth_time
     angle_now = "%.6f" %inital_phi
     etas_now = "%.g" %etas
     edec_now = "%.g" %edec
@@ -177,7 +176,7 @@ def parameterSearchShell():
 
 				#conditions for ending the loop
 				if( abs(totaldEdyTest-totaldEdyExpect) < 10):
-					sfactor_log.write("%6.2f       %20.8f    %20.8f		%20.8f    %20.4f\n"   \
+					sfactor_log.write("%8.4f       %20.8f    %20.8f		%20.8f    %20.4f\n"   \
 						%(matching_time, eta_s, tdec, norm_factor, totaldEdyTest))
 
 					# run resonance decay
@@ -207,7 +206,7 @@ def parameterSearchShell():
 					break	
 				# if current scaling facotor is not correct, get the guess for next run
 				#Keep a log	
-				sfactor_log.write("%6.2f       %20.8f    %20.8f		%20.8f    %20.4f\n"   \
+				sfactor_log.write("%8.4f       %20.8f    %20.8f		%20.8f    %20.4f\n"   \
 					%(matching_time, eta_s, tdec, norm_factor, totaldEdyTest))
 				sfactor_log.flush()
 				if(matching_time>=7.9):
