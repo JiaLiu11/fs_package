@@ -7,15 +7,17 @@
 clear all
 
 % run parameters
-taus_list = 0.4:0.2:2.0;
-etas_list = 0.08:0.04:0.4;
-tdec_list = 100:10:160;
+taus_list = [0.475,0.573,0.641,0.745, 0.860, 0.921, 1.099, 1.153, 1.261, 1.345];
+etas_list = [0.0902,0.1057,0.1300,0.1413, 0.1621, 0.1911, 0.2091, 0.2356, 0.2448, 0.2615];
+tdec_list = [101.8,113.1,120.3,122.3, 129.2, 137.3, 143.9, 155.2, 158.3, 167.8];
 event_id = 99;
 particle_collection = {'pion_p', 'proton'};
 
 % define folder structure
 rootDir = pwd();
 event_folder_pattern = fullfile(rootDir, 'dataBase', 'taus_%g', 'etas_%g', 'tdec_%g');
+event_folder_v3_pattern = fullfile(rootDir, 'dataBase', 'taus_%g', 'etas_%g', 'tdec_%g'); %file contains v3
+
 % pre-allocate space
 resultTable = zeros(length(taus_list)*length(etas_list)*length(tdec_list), ...
     6+length(particle_collection)); % event_id, tau_s, eta/s, Tdec, V2ch, V3ch, pion meanPT, proton meanPT
@@ -48,13 +50,17 @@ for itaus = 1:length(taus_list)
             tdec_now = tdec_list(itdec);
             
             % process one event
-            event_folder_now = sprintf(event_folder_pattern, taus_now, etas_now, tdec_now);
-            
+            event_folder_now = sprintf(event_folder_pattern, taus_now, etas_now, tdec_now);   
+            event_folder_v3_now = sprintf(event_folder_v3_pattern, taus_now, etas_now, tdec_now);
+
             % record all charged particle v2 and v3
-            charged_vn_file = fullfile(event_folder_now, 'Charged_integrated_vndata.dat');
-            charged_vn_data=load(charged_vn_file);
-            v2ch_now = charged_vn_data(3, end);
-            v3ch_now = charged_vn_data(4, end);
+            charged_v2_file = fullfile(event_folder_now, 'Charged_ptcut0510_eta_integrated_vndata.dat');
+            charged_v2_data=load(charged_v2_file);
+            v2ch_now = charged_v2_data(3, end);
+
+            charged_v3_file = fullfile(event_folder_v3_now, 'Charged_ptcut0510_eta_integrated_vndata.dat');
+            charged_v3_data=load(charged_v3_file);            
+            v3ch_now = charged_v3_data(4, end);
             
             % calculate mean pT for specified particles
             meanpT_now = zeros(1, length(particle_collection));
