@@ -219,7 +219,7 @@ def parameterSearchShell():
 				params_backup_file.write("%g 	%g 	%g 	%g\n" \
 					%(matching_time, eta_s, tdec, edec))
 				params_backup_file.close() 
-				print 'Current run completed for eta/s=%.3f, Tdec=%.3f' \
+				print 'Current run completed for eta/s=%.3f, Tdec=%.3f\n' \
 					%(eta_s, tdec)
 
 				#get the used rescale factor for the matching time run
