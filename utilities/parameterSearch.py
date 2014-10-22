@@ -26,7 +26,7 @@ tableLocation = path.join(rootDir, "tables")
 
 # run parameters
 node_name = rootDir.split('/')[-1]  # get the name of current node
-node_index = int(node_name.split('e')[-1])-1 # index of tau_s for current folder
+node_index = int(node_name.split('e')[-1]) # index of tau_s for current folder
 backupDir_currentNode = path.join('..','..','..', 'dataBase', node_name)
 number_of_nodes = 10 # total number of nodes
 
@@ -56,7 +56,7 @@ def runlm(event_num, tau0, taumin, taumax, dtau, lmDirectory):
     """
     Run Landau matching code for a single event
     """
-    lm_cmd = lmDirectory + "/./lm.e " + 'event_mode='+str(event_num) \
+    lm_cmd = lmDirectory + "/./lm.e >runlog_lm.dat" + ' event_mode='+str(event_num) \
         + ' tau0='+str(tau0) +' taumin='+str(taumin) + ' taumax=' +str(taumax) \
         + ' dtau='+str(dtau)
     lm_retcode = call(lm_cmd, shell=True, cwd=lmDirectory)
@@ -73,10 +73,10 @@ def runHydro(mth_time, norm_factor, hydro_dir, inital_phi, etas, edec):
     """
     #scale the profile
     norm_factor_now = "%.6f" %norm_factor
-    tau0 = "%.g" %mth_time
+    tau0 = "%g" %mth_time
     angle_now = "%.6f" %inital_phi
-    etas_now = "%.g" %etas
-    edec_now = "%.g" %edec
+    etas_now = "%g" %etas
+    edec_now = "%g" %edec
     #run hydro
     print 'Hydro is running at tau0:', mth_time
     hydro_cmd = hydro_dir + "/./VISHNew.e >runlog.dat"  + " t0="+ tau0 \
@@ -130,7 +130,7 @@ def parameterSearchShell():
 	params_list_source = path.join(tableLocation, "params_list.dat")
 	params_list_current= path.join(rootDir, "params_list_"+
 		node_name+".dat")
-	extractParameterList(params_list_source, params_list_current, node_idx)
+	extractParameterList(params_list_source, params_list_current, node_index)
 	params_list_currentNode = np.loadtxt(params_list_current)
 
 	rescale_factor_used = rescale_factor_guess # start value for sfactor search
@@ -139,6 +139,8 @@ def parameterSearchShell():
 	
 	for i in range(params_list_currentNode.shape[0]):
 		matching_time, eta_s, tdec, edec = params_list_currentNode[i,:]
+		print 'Running at taus=%g, eta/s=%.3f, Tdec=%.3f ... ' \
+			%(matching_time, eta_s, tdec)  
 		# get free-streamed data
 		runlm(event_number, 0.01, matching_time, matching_time+0.01, 0.01, runcode.lmDirectory)
 		lmDataDirectory = path.join(runcode.lmDirectory, 'data/result/event_' \
@@ -146,14 +148,14 @@ def parameterSearchShell():
 		runcode.cleanUpFolder(runcode.hydroInitialDirectory)
 		runcode.moveLmData2Hydro(lmDataDirectory, runcode.hydroInitialDirectory, \
 			"%g" %matching_time)
-		runcode.cleanUpFolder(lmDataDirectory)
+		lmDataDirectory_upper = path.join(runcode.lmDirectory, 'data/result/event_' \
+			+ str(event_number))
+		runcode.cleanUpFolder(lmDataDirectory_upper)
 
 		# start paramter search	
 		rescale_factor = rescale_factor_used
 		xl = sfactorL
-		xr = sfactorR 
-		print 'Running at taus=%g, eta/s=%.3f, Tdec=%.3f' \
-			%(matching_time, eta_s, tdec)           
+		xr = sfactorR          
 		while 1:
 			# use bisect at late matching
 			if(matching_time>=7.9):
