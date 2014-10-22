@@ -20,28 +20,36 @@ import numpy as np
 import runcode, dEcounters
 import sys, shutil
 
-# parameters
-taus_list = np.array([1.098510,0.860154,0.572931,0.474670,1.261464,1.345313,1.152963,0.921270,0.744624,0.641312])
-eta_s_list= np.array([0.0901528,0.2447774,0.2090514,0.1620998,0.1911432,0.1300088,0.2615055,0.1056958,0.2355997,0.1412762])
-tdec_list = np.array([167.780,101.807,129.226,113.052,158.301,122.266,143.944,120.266,155.164,137.348]) #MeV
-edec_list = np.array([0.572172,0.103833,0.197228,0.149274,0.441336,0.194059,0.32788,0.183721,0.415157,0.28256]) # GeV/fm^3, EOS 95pceV0
-
 # folder structure
 rootDir = path.abspath("..") #assume this file is placed under utilities/
+tableLocation = path.join(rootDir, "tables")
 
 # run parameters
-node_index = rootDir.split('/')[-1]  # get the name of current node
-taus_index = int(node_index.split('e')[-1])-1 # index of tau_s for current folder
-matching_time= taus_list[taus_index]
-backupDir_currentNode = path.join('..','..','..', 'dataBase', 'taus_%g'%matching_time)
+node_name = rootDir.split('/')[-1]  # get the name of current node
+node_index = int(node_name.split('e')[-1])-1 # index of tau_s for current folder
+backupDir_currentNode = path.join('..','..','..', 'dataBase', node_name)
+number_of_nodes = 10 # total number of nodes
 
 # parameters for scaling factor search
 totaldEdyExpect = 1599.4  #from single-shot viscous hydro starting at 0.6fm/c, thermal pion+ num 210.
-event_number = 99
+event_number = 99 # 99: for smooth event which maximizes epsilon_2
 pre_process_decdat2_file = True
 sfactorL = 0.01
 sfactorR = 20.0
 rescale_factor_guess = 9.0 #initial guess of rescaling factor
+
+
+def extractParameterList(infile_name, outfile_name, node_idx):
+	"""
+	Extract the parameter list for current node
+	Return a numpy array
+	"""
+	params_list_data = np.loadtxt(infile_name)
+	# subset data
+	total_lines = params_list_data.shape[0]
+	node_lines  = int(total_lines/number_of_nodes)
+	params_selected = params_list_data[(node_idx-1)*node_lines:(node_idx*node_lines),:]
+	np.savetxt(outfile_name, params_selected, fmt='%g',delimiter='\t')
 
 
 def runlm(event_num, tau0, taumin, taumax, dtau, lmDirectory):
@@ -118,110 +126,117 @@ def getTotaldEdyOnly(dEdyd2rdphipFile, edFile, sfactor, dEdydphipthermFolder, \
     return totaldEdy
 
 def parameterSearchShell():
-	# get free-streamed data
-	runlm(99, 0.01, matching_time, matching_time+0.01, 0.01, runcode.lmDirectory)
+	# get search parameters for current nodes
+	params_list_source = path.join(tableLocation, "params_list.dat")
+	params_list_current= path.join(rootDir, "params_list_"+
+		node_name+".dat")
+	extractParameterList(params_list_source, params_list_current, node_idx)
+	params_list_currentNode = np.loadtxt(params_list_current)
 
-	# move lm data to hydro
-	lmDataDirectory = path.join(runcode.lmDirectory, 'data/result/event_' \
-	                            + str(event_number)+"/"+ "%g" %matching_time)
-	runcode.cleanUpFolder(runcode.hydroInitialDirectory)
-	runcode.moveLmData2Hydro(lmDataDirectory, runcode.hydroInitialDirectory, \
-		"%g" %matching_time)
-
+	rescale_factor_used = rescale_factor_guess # start value for sfactor search
 	sfactor_log = open(path.join(rootDir,'sfactor_log.dat'), 'a+')
-	sfactor_log.write("##Matching Time             eta/s                 Tdec                  sfactor                 totaldEdy \n")	
+	sfactor_log.write("##Matching Time             eta/s                 Tdec                  sfactor                 totaldEdy \n")
+	
+	for i in range(params_list_currentNode.shape[0]):
+		matching_time, eta_s, tdec, edec = params_list_currentNode[i,:]
+		# get free-streamed data
+		runlm(event_number, 0.01, matching_time, matching_time+0.01, 0.01, runcode.lmDirectory)
+		lmDataDirectory = path.join(runcode.lmDirectory, 'data/result/event_' \
+		                            + str(event_number)+"/"+ "%g" %matching_time)
+		runcode.cleanUpFolder(runcode.hydroInitialDirectory)
+		runcode.moveLmData2Hydro(lmDataDirectory, runcode.hydroInitialDirectory, \
+			"%g" %matching_time)
+		runcode.cleanUpFolder(lmDataDirectory)
 
-	# start to loop over two parameter space
-	rescale_factor_used = rescale_factor_guess
-	# ad hoc fix: only take one combination
-	eta_s_list_now = [eta_s_list[taus_index]]
-	tdec_list_now  = [tdec_list[taus_index]]
-	edec_list_now  = [edec_list[taus_index]]
-	for eta_s in eta_s_list_now:
-		for tdec_idx in range(len(tdec_list_now)):
-			tdec = tdec_list_now[tdec_idx]
-			edec = edec_list_now[tdec_idx]
-			rescale_factor = rescale_factor_used
-			xl = sfactorL
-			xr = sfactorR 
-			print 'Running at taus=%g, eta/s=%.3f, Tdec=%.3f' \
-				%(matching_time, eta_s, tdec)           
-			while 1:
-				# use bisect at late matching
-				if(matching_time>=7.9):
-					norm_factor = (xl+xr)/2.0
-				else:
-					norm_factor = rescale_factor
+		# start paramter search	
+		rescale_factor = rescale_factor_used
+		xl = sfactorL
+		xr = sfactorR 
+		print 'Running at taus=%g, eta/s=%.3f, Tdec=%.3f' \
+			%(matching_time, eta_s, tdec)           
+		while 1:
+			# use bisect at late matching
+			if(matching_time>=7.9):
+				norm_factor = (xl+xr)/2.0
+			else:
+				norm_factor = rescale_factor
 
-				runHydro(matching_time, norm_factor, runcode.hydroDirectory, 0.0, 
-					eta_s, edec) 
-				runcode.cleanUpFolder(runcode.iSDataDirectory)
-				runcode.moveHydroData2iS(runcode.hydroResultDirectory, runcode.iSDataDirectory)
+			runHydro(matching_time, norm_factor, runcode.hydroDirectory, 0.0, 
+				eta_s, edec) 
+			runcode.cleanUpFolder(runcode.iSDataDirectory)
+			runcode.moveHydroData2iS(runcode.hydroResultDirectory, runcode.iSDataDirectory)
 
-				#run iS to get the total energy
-				decdat_file = path.join(runcode.iSDataDirectory, 'decdat2.dat')
-				if(stat(decdat_file).st_size==0) :  
-					print 'decdat.dat is empty! Only calculate thermalization surface. \n'	
-					dEdphipFile = path.join(runcode.hydroInitialDirectory, 'dEdydphip_kln.dat')		
-					totaldEdyTest =dEcounters.dEdyTotalInital(dEdphipFile, \
-						norm_factor)		
-				else:
-					if pre_process_decdat2_file is True:
-						runcode.preProcessDecdat2File(runcode.iSDataDirectory)
-						print 'adjustsfactor: use preprocessed decdat2 file!'
-					runcode.runiS(runcode.iSDirectory)
-					#get the current total energy
-					dEdyd2rdphipFile = path.join(runcode.hydroInitialDirectory, 'dEd2rdphip_kln.dat')
-					edFile = path.join(runcode.hydroInitialDirectory, 'ed_profile_kln.dat')
+			#run iS to get the total energy
+			decdat_file = path.join(runcode.iSDataDirectory, 'decdat2.dat')
+			if(stat(decdat_file).st_size==0) :  
+				print 'decdat.dat is empty! Only calculate thermalization surface. \n'	
+				dEdphipFile = path.join(runcode.hydroInitialDirectory, 'dEdydphip_kln.dat')		
+				totaldEdyTest =dEcounters.dEdyTotalInital(dEdphipFile, \
+					norm_factor)		
+			else:
+				if pre_process_decdat2_file is True:
+					runcode.preProcessDecdat2File(runcode.iSDataDirectory)
+					print 'adjustsfactor: use preprocessed decdat2 file!'
+				runcode.runiS(runcode.iSDirectory)
+				#get the current total energy
+				dEdyd2rdphipFile = path.join(runcode.hydroInitialDirectory, 'dEd2rdphip_kln.dat')
+				edFile = path.join(runcode.hydroInitialDirectory, 'ed_profile_kln.dat')
 
-					totaldEdyTest = getTotaldEdyOnly(dEdyd2rdphipFile, edFile, norm_factor, \
-						runcode.iSDataDirectory, 'dEdydphipThermal.dat',\
-						runcode.iSDirectory, runcode.iSDataDirectory, 'dEdydphipFO.dat')   
+				totaldEdyTest = getTotaldEdyOnly(dEdyd2rdphipFile, edFile, norm_factor, \
+					runcode.iSDataDirectory, 'dEdydphipThermal.dat',\
+					runcode.iSDirectory, runcode.iSDataDirectory, 'dEdydphipFO.dat')   
 
-				#conditions for ending the loop
-				if( abs(totaldEdyTest-totaldEdyExpect) < 10):
-					sfactor_log.write("%8.4f       %20.8f    %20.8f		%20.8f    %20.4f\n"   \
-						%(matching_time, eta_s, tdec, norm_factor, totaldEdyTest))
-
-					# run resonance decay
-					runRes_cmd = runcode.iSDirectory+'/./resonance.e >reslog.dat'
-					reso_code = call(runRes_cmd, shell=True, cwd=runcode.iSDirectory)
-					if reso_code == 0:
-					    pass
-					else:
-					    print 'parameterSearch: resonance decay failed!'
-					    sys.exit(-1)	
-					# run iInteSp
-					inteSp_cmd = runcode.iSDirectory+'/./iInteSp.e'
-					inteSp_code = call(inteSp_cmd, shell=True, cwd=runcode.iSDirectory)
-					if inteSp_code == 0:
-					    pass
-					else:
-					    print 'parameterSearch: iInteSp failed!'
-					    sys.exit(-1)			
-					#backup the run files
-					backupDir = path.join(backupDir_currentNode, 'etas_%g'%eta_s, 
-						'tdec_%g'%tdec)
-					runcode.backupEachRun(runcode.iSDataDirectory, backupDir)
-					print 'Current run completed for eta/s=%.3f, Tdec=%.3f' \
-						%(eta_s, tdec)
-					#get the used rescale factor for the matching time run
-					rescale_factor_used = norm_factor
-					break	
-				# if current scaling facotor is not correct, get the guess for next run
-				#Keep a log	
+			#conditions for ending the loop
+			if( abs(totaldEdyTest-totaldEdyExpect) < 10):
 				sfactor_log.write("%8.4f       %20.8f    %20.8f		%20.8f    %20.4f\n"   \
 					%(matching_time, eta_s, tdec, norm_factor, totaldEdyTest))
-				sfactor_log.flush()
-				if(matching_time>=7.9):
-					if(totaldEdyTest-totaldEdyExpect<0):
-						xl = norm_factor
-						xr = xr
-					elif(totaldEdyTest-totaldEdyExpect>0):
-						xl = xl
-						xr = norm_factor
-				else:   	
-					rescale_factor = getRescaleFactor(totaldEdyTest) * norm_factor
+
+				# run resonance decay
+				runRes_cmd = runcode.iSDirectory+'/./resonance.e >reslog.dat'
+				reso_code = call(runRes_cmd, shell=True, cwd=runcode.iSDirectory)
+				if reso_code == 0:
+				    pass
+				else:
+				    print 'parameterSearch: resonance decay failed!'
+				    sys.exit(-1)	
+				# run iInteSp
+				inteSp_cmd = runcode.iSDirectory+'/./iInteSp.e'
+				inteSp_code = call(inteSp_cmd, shell=True, cwd=runcode.iSDirectory)
+				if inteSp_code == 0:
+				    pass
+				else:
+				    print 'parameterSearch: iInteSp failed!'
+				    sys.exit(-1)	
+
+				#backup the run files
+				backupDir = path.join(backupDir_currentNode, 'run_%d'%(i+1))
+				runcode.backupEachRun(runcode.iSDataDirectory, backupDir)
+				#write the run parameters to backup folder
+				params_backup_file = open(path.join(backupDir, "params.dat"), "w")
+				params_backup_file.write("# tau_s     eta_s     t_dec      e_dec")
+				params_backup_file.write("%g 	%g 	%g 	%g\n" \
+					%(matching_time, eta_s, tdec, edec))
+				params_backup_file.close() 
+				print 'Current run completed for eta/s=%.3f, Tdec=%.3f' \
+					%(eta_s, tdec)
+
+				#get the used rescale factor for the matching time run
+				rescale_factor_used = norm_factor
+				break	
+			# if current scaling facotor is not correct, get the guess for next run
+			#Keep a log	
+			sfactor_log.write("%8.4f       %20.8f    %20.8f		%20.8f    %20.4f\n"   \
+				%(matching_time, eta_s, tdec, norm_factor, totaldEdyTest))
+			sfactor_log.flush()
+			if(matching_time>=7.9):
+				if(totaldEdyTest-totaldEdyExpect<0):
+					xl = norm_factor
+					xr = xr
+				elif(totaldEdyTest-totaldEdyExpect>0):
+					xl = xl
+					xr = norm_factor
+			else:   	
+				rescale_factor = getRescaleFactor(totaldEdyTest) * norm_factor
 
 	sfactor_log.close()
 	print "All parameters complete!"
