@@ -16,7 +16,7 @@ particle_collection = {'pion_p', 'proton'};
 % define folder structure
 rootDir = pwd();
 event_folder_pattern = fullfile(rootDir, 'dataBase', 'taus_%g', 'etas_%g', 'tdec_%g');
-event_folder_v3_pattern = fullfile(rootDir, 'dataBase', 'taus_%g', 'etas_%g', 'tdec_%g'); %file contains v3
+event_folder_v3_pattern = fullfile(rootDir, 'dataBase2', 'taus_%g', 'etas_%g', 'tdec_%g'); %file contains v3
 
 % pre-allocate space
 resultTable = zeros(length(taus_list)*length(etas_list)*length(tdec_list), ...

@@ -21,10 +21,10 @@ import runcode, dEcounters
 import sys, shutil
 
 # parameters
-taus_list = np.array([0.475,0.573,0.641,0.745, 0.860, 0.921, 1.099, 1.153, 1.261, 1.345])
-eta_s_list= np.array([0.0902,0.1057,0.1300,0.1413, 0.1621, 0.1911, 0.2091, 0.2356, 0.2448, 0.2615])
-tdec_list = np.array([101.8,113.1,120.3,122.3, 129.2, 137.3, 143.9, 155.2, 158.3, 167.8]) #MeV
-edec_list = np.array([0.103833,0.149274,0.183721,0.194059,0.197228,0.28256,0.32788,0.415157,0.441336,0.572172]) # GeV/fm^3, EOS 95pceV0
+taus_list = np.array([1.098510,0.860154,0.572931,0.474670,1.261464,1.345313,1.152963,0.921270,0.744624,0.641312])
+eta_s_list= np.array([0.0901528,0.2447774,0.2090514,0.1620998,0.1911432,0.1300088,0.2615055,0.1056958,0.2355997,0.1412762])
+tdec_list = np.array([167.780,101.807,129.226,113.052,158.301,122.266,143.944,120.266,155.164,137.348]) #MeV
+edec_list = np.array([0.572172,0.103833,0.197228,0.149274,0.441336,0.194059,0.32788,0.183721,0.415157,0.28256]) # GeV/fm^3, EOS 95pceV0
 
 # folder structure
 rootDir = path.abspath("..") #assume this file is placed under utilities/
@@ -65,7 +65,7 @@ def runHydro(mth_time, norm_factor, hydro_dir, inital_phi, etas, edec):
     """
     #scale the profile
     norm_factor_now = "%.6f" %norm_factor
-    tau0 = "%.3f" %mth_time
+    tau0 = "%.g" %mth_time
     angle_now = "%.6f" %inital_phi
     etas_now = "%.g" %etas
     edec_now = "%.g" %edec
@@ -133,10 +133,14 @@ def parameterSearchShell():
 
 	# start to loop over two parameter space
 	rescale_factor_used = rescale_factor_guess
-	for eta_s in eta_s_list:
-		for tdec_idx in range(len(tdec_list)):
-			tdec = tdec_list[tdec_idx]
-			edec = edec_list[tdec_idx]
+	# ad hoc fix: only take one combination
+	eta_s_list_now = [eta_s_list[taus_index]]
+	tdec_list_now  = [tdec_list[taus_index]]
+	edec_list_now  = [edec_list[taus_index]]
+	for eta_s in eta_s_list_now:
+		for tdec_idx in range(len(tdec_list_now)):
+			tdec = tdec_list_now[tdec_idx]
+			edec = edec_list_now[tdec_idx]
 			rescale_factor = rescale_factor_used
 			xl = sfactorL
 			xr = sfactorR 
