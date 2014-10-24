@@ -115,7 +115,7 @@ def checkExecutables():
     # compile if necessary and check again
     if not existenceFlag:
         print("Start building executables...")
-        call("./compile_all.sh &> CompileRecord.txt", shell=True, cwd="crank")
+        call("./compile_all.sh &> CompileRecord.txt", shell=True, cwd="fs_package/crank")
         unlink(path.join("crank", "CompileRecord.txt"))
 
         # check for existence of all executables again
