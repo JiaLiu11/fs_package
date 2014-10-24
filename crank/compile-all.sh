@@ -1,6 +1,6 @@
 #! /usr/bin/env bash
-(cd ..
-for ii in fs superMC VISHNew
+(cd ../fs_package/
+for ii in fs superMC VISHNew iS
     do
     (cd $ii; make; make clean)
 done
