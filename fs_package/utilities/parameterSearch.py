@@ -27,7 +27,7 @@ tableLocation = path.join(rootDir, "tables")
 # run parameters
 node_name = rootDir.split('/')[-1]  # get the name of current node
 node_index = int(node_name.split('e')[-1]) # index of tau_s for current folder
-backupDir_currentNode = path.join('..','..','..', 'dataBase', node_name)
+backupDir_currentNode = path.join(rootDir, 'localdataBase', node_name)
 number_of_nodes = 10 # total number of nodes
 
 # parameters for scaling factor search
@@ -219,8 +219,8 @@ def parameterSearchShell():
 				params_backup_file.write("%g 	%g 	%g 	%g\n" \
 					%(matching_time, eta_s, tdec, edec))
 				params_backup_file.close() 
-				print 'Current run completed for eta/s=%.3f, Tdec=%.3f\n' \
-					%(eta_s, tdec)
+				print 'Current run completed (%d / %d ) for eta/s=%.3f, Tdec=%.3f\n' \
+					%(i+1, params_list_currentNode.shape[0], eta_s, tdec)
 
 				#get the used rescale factor for the matching time run
 				rescale_factor_used = norm_factor
