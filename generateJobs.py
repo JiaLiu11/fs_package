@@ -100,7 +100,7 @@ ebeNodeFolder = "fs_package"
 crankFolderName = "crank"
 crankFolder = path.join(ebeNodeFolder, crankFolderName)
 utilitiesFolderName = "utilities"
-utilitiesFolder = path.join(ebeNodeFolder, utilitiesFolderName)
+utilitiesFolder = path.join(utilitiesFolderName)
 # # copy parameter file into the crank folder
 # copy("ParameterDict.py", crankFolder)
 
