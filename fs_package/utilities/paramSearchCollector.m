@@ -70,8 +70,8 @@ for inode = 1:length(node_list)
             pT_array = spectra_data(:,1);
             dN_array = spectra_data(:,3);%dN/(2pi pT dpT)
             % do interpolation on pT Gaussian points
-            dN_forInterp = dN_array.*2.*pi.*pT_array; %dN/dpT
-            dN_interped  = exp(interp1(pT_array, log(dN_forInterp), pT_new, 'linear'));
+            dN_interped  = exp(interp1(pT_array, log(dN_array), pT_new, 'linear'));
+            dN_interped  = dN_interped.*2.*pi.*pT_new;
             % find mean pT
             totalpT_now  = sum(pT_new.*pT_weight.*dN_interped);
             totalNum_now=sum(pT_weight.*dN_interped);                
