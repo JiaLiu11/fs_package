@@ -125,6 +125,55 @@ def getTotaldEdyOnly(dEdyd2rdphipFile, edFile, sfactor, dEdydphipthermFolder, \
     totaldEdy = dEdy_therm + dEdy_fo
     return totaldEdy
 
+def storeParamSearchResults(event_id, data_folder, filename):
+	"""
+	Collect and write the parameter search result to log file.
+	Result: write a new line contains: 
+		event_id, taus_now, etas_now, tdec_now, v2ch_now, v3ch_now, meanpT_now
+	"""
+	# pT gaussian points and weights
+	pT_new = np.array([0.33401871,0.37228685,0.44019231,0.53615897, \
+	             0.65793937,0.80267954,0.96698706,1.14701076, \
+	             1.33853107,1.53705894,1.73794106,1.93646893, \
+	             2.12798924,2.30801294,2.47232046,2.61706063, \
+	             2.73884103,2.83480769,2.90271315,2.94098129]);
+	pT_weight = np.array([2.31183844e-02,5.32893766e-02,8.22570634e-02, \
+	              1.09300723e-01,1.33783282e-01,1.55130323e-01, \
+	              1.72841338e-01,1.86501143e-01,1.95789545e-01, \
+	              2.00488821e-01,2.00488821e-01,1.95789545e-01, \
+	              1.86501143e-01,1.72841338e-01,1.55130323e-01, \
+	              1.33783282e-01,1.09300723e-01,8.22570634e-02, \
+	              5.32893766e-02,2.31183844e-02]);
+	# get parameter list
+	params_now = np.loadtxt(path.join(data_folder, 'params.dat'))
+	taus_run, etas_run, tdec_run, edec_run = params_now
+	# get flow anisotropy
+	vn_ch_data = np.loadtxt(path.join(data_folder, 'Charged_ptcut0510_eta_integrated_vndata.dat'))
+	v2_ch = vn_ch_data[2, -1]
+	v3_ch = vn_ch_data[3, -1]
+	# get pion mean pt at pt range (0.3, 3) GeV/c
+	pion_spectra_data = np.loadtxt(path.join(data_folder, 'pion_p_vndata.dat'))
+	pt_array = pion_spectra_data[:, 0]
+	dndpt_array = pion_spectra_data[:, 2] # dN/(2pi pT dpT)
+	dndpt_interped = np.exp(np.interp(pT_new, pt_array, np.log(dndpt_array)))
+	dn_interped = dndpt_interped*2.0*np.pi*pT_new
+	meanpt_pion = sum(dn_interped*pT_new*pT_weight)/sum(dn_interped*pT_weight)
+	# get proton mean pt at pt range (0.3, 3) GeV/c
+	proton_spectra_data = np.loadtxt(path.join(data_folder, 'proton_vndata.dat'))
+	pt_array = proton_spectra_data[:, 0]
+	dndpt_array = proton_spectra_data[:, 2] # dN/(2pi pT dpT)
+	dndpt_interped = np.exp(np.interp(pT_new, pt_array, np.log(dndpt_array)))
+	dn_interped = dndpt_interped*2.0*np.pi*pT_new
+	meanpt_proton = sum(dn_interped*pT_new*pT_weight)/sum(dn_interped*pT_weight)
+	# write to file
+	print "%d \t %12.6f \t %12.6f \t %12.6f \t %12.4e \t %12.4e \t %12.6f \t %12.6f\n"\
+		%(event_id, taus_run, etas_run, tdec_run, v2_ch, v3_ch, meanpt_pion, meanpt_proton)
+	param_log = open(filename, 'a+')
+	param_log.write("%d \t %12.6f \t %12.6f \t %12.6f \t %12.4e \t %12.4e \t %12.6f \t %12.6f\n"\
+		%(event_id, taus_run, etas_run, tdec_run, v2_ch, v3_ch, meanpt_pion, meanpt_proton))
+	param_log.close()
+
+
 def parameterSearchShell():
 	# get search parameters for current nodes
 	params_list_source = path.join(tableLocation, "params_list.dat")
@@ -135,8 +184,13 @@ def parameterSearchShell():
 
 	rescale_factor_used = rescale_factor_guess # start value for sfactor search
 	sfactor_log = open(path.join(rootDir,'sfactor_log.dat'), 'a+')
-	sfactor_log.write("##Matching Time             eta/s                 Tdec                  sfactor                 totaldEdy \n")
-	
+	sfactor_log.write("##Matching Time \t eta/s \t Tdec \t sfactor  \t totaldEdy \n")
+
+	paramSearchLogFile = open(path.join(rootDir, 'param_search_log.dat'),'a+') # store parameter search result
+	paramSearchLogFile.write("#   tau_s \t eta/s \t tdec \t v2_ch  \t v3_ch \t meanpT_pion \t meanpT_proton \n")
+	paramSearchLogFile.close()
+	param_search_log = path.join(rootDir, 'param_search_log.dat')
+
 	for i in range(params_list_currentNode.shape[0]):
 		matching_time, eta_s, tdec, edec = params_list_currentNode[i,:]
 		print 'Running at taus=%g, eta/s=%.3f, Tdec=%.3f ... ' \
@@ -209,8 +263,10 @@ def parameterSearchShell():
 				else:
 				    print 'parameterSearch: iInteSp failed!'
 				    sys.exit(-1)	
+				# get the parameter search results
+				storeParamSearchResults(event_number, runcode.iSDataDirectory, param_search_log)
 
-				#backup the run files
+				#backup the run files by zip
 				backupDir = path.join(backupDir_currentNode, 'run_%d'%(i+1))
 				runcode.backupEachRun(runcode.iSDataDirectory, backupDir)
 				#write the run parameters to backup folder
@@ -219,6 +275,14 @@ def parameterSearchShell():
 				params_backup_file.write("%g 	%g 	%g 	%g\n" \
 					%(matching_time, eta_s, tdec, edec))
 				params_backup_file.close() 
+				# zip the backupdir and delete source files
+				zip_cmd = "zip -r -q -j -m"+ "run_%d.zip "%(i+1)+ backupDir 
+				zip_code = subprocess.call(zip_cmd, shell=True, cwd=backupDir_currentNode)
+				if zip_code == 0:
+					pass
+				else:
+					print 'zip fails!'
+					sys.exit(-1)
 				print 'Current run completed (%d / %d ) for eta/s=%.3f, Tdec=%.3f\n' \
 					%(i+1, params_list_currentNode.shape[0], eta_s, tdec)
 
