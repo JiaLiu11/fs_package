@@ -28,15 +28,15 @@ tableLocation = path.join(rootDir, "tables")
 node_name = rootDir.split('/')[-1]  # get the name of current node
 node_index = int(node_name.split('e')[-1]) # index of tau_s for current folder
 backupDir_currentNode = path.join(rootDir, 'localdataBase', node_name)
-number_of_nodes = 10 # total number of nodes
+number_of_nodes = 20 # total number of nodes
 
 # parameters for scaling factor search
-totaldEdyExpect = 1599.4  #from single-shot viscous hydro starting at 0.6fm/c, thermal pion+ num 210.
+totaldEdyExpect = 1599.4  #from single-shot viscous hydro starting at 0.6fm/c, thermal pion+ num 210. 1547 for glb
 event_number = 99 # 99: for smooth event which maximizes epsilon_2
 pre_process_decdat2_file = True
 sfactorL = 0.01
 sfactorR = 20.0
-rescale_factor_guess = 9.0 #initial guess of rescaling factor
+rescale_factor_guess = 9.0 #initial guess of rescaling factor, 20 for glb
 
 
 def extractParameterList(infile_name, outfile_name, node_idx):
@@ -166,8 +166,6 @@ def storeParamSearchResults(event_id, data_folder, filename):
 	dn_interped = dndpt_interped*2.0*np.pi*pT_new
 	meanpt_proton = sum(dn_interped*pT_new*pT_weight)/sum(dn_interped*pT_weight)
 	# write to file
-	print "%d \t %12.6f \t %12.6f \t %12.6f \t %12.4e \t %12.4e \t %12.6f \t %12.6f\n"\
-		%(event_id, taus_run, etas_run, tdec_run, v2_ch, v3_ch, meanpt_pion, meanpt_proton)
 	param_log = open(filename, 'a+')
 	param_log.write("%d \t %12.6f \t %12.6f \t %12.6f \t %12.4e \t %12.4e \t %12.6f \t %12.6f\n"\
 		%(event_id, taus_run, etas_run, tdec_run, v2_ch, v3_ch, meanpt_pion, meanpt_proton))
@@ -176,7 +174,7 @@ def storeParamSearchResults(event_id, data_folder, filename):
 
 def parameterSearchShell():
 	# get search parameters for current nodes
-	params_list_source = path.join(tableLocation, "params_list.dat")
+	params_list_source = path.join(tableLocation, "params_list.dat") #"params_list_glb.dat" for glb
 	params_list_current= path.join(rootDir, "params_list_"+
 		node_name+".dat")
 	extractParameterList(params_list_source, params_list_current, node_index)
@@ -263,8 +261,6 @@ def parameterSearchShell():
 				else:
 				    print 'parameterSearch: iInteSp failed!'
 				    sys.exit(-1)	
-				# get the parameter search results
-				storeParamSearchResults(event_number, runcode.iSDataDirectory, param_search_log)
 
 				#backup the run files by zip
 				backupDir = path.join(backupDir_currentNode, 'run_%d'%(i+1))
@@ -275,9 +271,11 @@ def parameterSearchShell():
 				params_backup_file.write("%g 	%g 	%g 	%g\n" \
 					%(matching_time, eta_s, tdec, edec))
 				params_backup_file.close() 
+				# write down parameter search result
+				storeParamSearchResults(event_number, backupDir, param_search_log)
 				# zip the backupdir and delete source files
-				zip_cmd = "zip -r -q -j -m"+ "run_%d.zip "%(i+1)+ backupDir 
-				zip_code = subprocess.call(zip_cmd, shell=True, cwd=backupDir_currentNode)
+				zip_cmd = "zip -r -q -j -m "+ "run_%d.zip "%(i+1)+ backupDir 
+				zip_code = call(zip_cmd, shell=True, cwd=backupDir_currentNode)
 				if zip_code == 0:
 					pass
 				else:

@@ -36,7 +36,7 @@ try:
     if len(argv)>=argId+1: # set wall time
         walltime = argv[argId]
     else:
-        walltime = "%d:00:00" % (numberOfEventsPerJob) # 3 hours per job
+        walltime = "%d:00:00" % (numberOfEventsPerJob) # 1 hours per search
     print "4\n"
     argId += 1
     if len(argv)>=argId+1: # whether to compress final results folder
@@ -118,6 +118,7 @@ for i in range(1, numberOfJobs+1):
 #!/usr/bin/env bash
 #PBS -N fs-%d
 #PBS -l walltime=%s
+#PBS -l mem=8GB
 #PBS -j oe
 #PBS -S /bin/bash
 cd %s
