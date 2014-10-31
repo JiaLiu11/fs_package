@@ -124,7 +124,7 @@ cd %s
 (cd %s
     ulimit -n 1000
     python parameterSearch.py 1> RunRecord.txt 2> ErrorRecord.txt
-    cp RunRecord.txt ErrorRecord.txt ../dataBase/
+    cp RunRecord.txt ErrorRecord.txt ../localdataBase/
 )
 mv ./localdataBase/* %s/node%d
 """ % (i, walltime, targetWorkingFolder, utilitiesFolder, resultsFolder, i)
