@@ -2493,6 +2493,7 @@ CSHEN======end=================================================================
         etaTtp(i,j,k)=(VCoefi(i,j,k)*Temp(i,j,k))*VRelaxT(i,j,k)  ! A(e+p)T/6 !(eta T/tau_Pi) for extra term in full I-S
         etaTtp(i,j,k)=dmax1(etaTtp(i,j,k),1e-30)
         VCoefi(i,j,k)=VCoefi(i,j,k)*ff
+        VRelaxT(i,j,k)=dmin1(VRelaxT(i,j,k), 1.D0/(2.D0*DT))! regulate when \eta/s is small
         VRelaxT(i,j,k)=VRelaxT(i,j,k)*ff
         If (Time > 0.8) Then
         If (etaTtp(i,j,k) .ne. etaTtp(i,j,k)) Then
