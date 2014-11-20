@@ -32,12 +32,12 @@ number_of_nodes = 20 # total number of nodes
 resumeMode = True
 
 # parameters for scaling factor search
-totaldEdyExpect = 1599.4  #from single-shot viscous hydro starting at 0.6fm/c, thermal pion+ num 210. 1547 for glb
+totaldEdyExpect = 1547  #from single-shot viscous hydro starting at 0.6fm/c, thermal pion+ num 210. 1547 for glb
 event_number = 99 # 99: for smooth event which maximizes epsilon_2
 pre_process_decdat2_file = True
 sfactorL = 0.01
 sfactorR = 20.0
-rescale_factor_guess = 9.0 #initial guess of rescaling factor, 20 for glb
+rescale_factor_guess = 20 #initial guess of rescaling factor, 20 for glb
 
 def findResumeRunNumber(param_log_fileName):
 	"""
@@ -54,7 +54,7 @@ def findResumeRunNumber(param_log_fileName):
 			finished_events = 1
 		else:
 			finished_events = log_data.shape[0] # a line represents a finished parameter search
-			print "Resume run from event: %d"%finished_events+1
+			print "Resume run from event: %d"%(finished_events+1)
 	else:
 		print "Parameter log file does not exists!"
 	return finished_events
@@ -138,12 +138,12 @@ def getTotaldEdyOnly(dEdyd2rdphipFile, edFile, sfactor, dEdydphipthermFolder, \
     """
     run two functions from dEcounters to get the total dEdy.
     """
-    dEdy_therm = dEcounters.dEdydphipSigmaThermal(dEdyd2rdphipFile, edFile, sfactor, \
-		dEdydphipthermFolder, dEdydphipFileName)
+  #   dEdy_therm = dEcounters.dEdydphipSigmaThermal(dEdyd2rdphipFile, edFile, sfactor, \
+		# dEdydphipthermFolder, dEdydphipFileName) # for no pre-equilibrium
     iSDataFolder = path.join(iSFolder, 'results')
     dEdy_fo = dEcounters.dEdydphipSigmaFO(iSFolder, iSDataFolder, dEdydphipHydroFolder, dEdydphipHydroFileName)
 
-    totaldEdy = dEdy_therm + dEdy_fo
+    totaldEdy = dEdy_fo #dEdy_therm + dEdy_fo
     return totaldEdy
 
 def storeParamSearchResults(event_id, data_folder, filename):
@@ -195,7 +195,7 @@ def storeParamSearchResults(event_id, data_folder, filename):
 
 def parameterSearchShell():
 	# get search parameters for current nodes
-	params_list_source = path.join(tableLocation, "params_list.dat") #"params_list_glb.dat" for glb
+	params_list_source = path.join(tableLocation, "params_list_glb.dat") #"params_list_glb.dat" for glb
 	params_list_current= path.join(rootDir, "params_list_"+
 		node_name+".dat")
 	extractParameterList(params_list_source, params_list_current, node_index)
@@ -219,16 +219,16 @@ def parameterSearchShell():
 		matching_time, eta_s, tdec, edec = params_list_currentNode[i,:]
 		print 'Running at taus=%g, eta/s=%.3f, Tdec=%.3f ... ' \
 			%(matching_time, eta_s, tdec)  
-		# get free-streamed data
-		runlm(event_number, 0.01, matching_time, matching_time+0.01, 0.01, runcode.lmDirectory)
-		lmDataDirectory = path.join(runcode.lmDirectory, 'data/result/event_' \
-		                            + str(event_number)+"/"+ "%g" %matching_time)
-		runcode.cleanUpFolder(runcode.hydroInitialDirectory)
-		runcode.moveLmData2Hydro(lmDataDirectory, runcode.hydroInitialDirectory, \
-			"%g" %matching_time)
-		lmDataDirectory_upper = path.join(runcode.lmDirectory, 'data/result/event_' \
-			+ str(event_number))
-		runcode.cleanUpFolder(lmDataDirectory_upper)
+		# # get free-streamed data # for no pre-equilibrium
+		# runlm(event_number, 0.01, matching_time, matching_time+0.01, 0.01, runcode.lmDirectory)
+		# lmDataDirectory = path.join(runcode.lmDirectory, 'data/result/event_' \
+		#                             + str(event_number)+"/"+ "%g" %matching_time)
+		# runcode.cleanUpFolder(runcode.hydroInitialDirectory)
+		# runcode.moveLmData2Hydro(lmDataDirectory, runcode.hydroInitialDirectory, \
+		# 	"%g" %matching_time)
+		# lmDataDirectory_upper = path.join(runcode.lmDirectory, 'data/result/event_' \
+		# 	+ str(event_number))
+		# runcode.cleanUpFolder(lmDataDirectory_upper)
 
 		# start paramter search	
 		rescale_factor = rescale_factor_used
@@ -250,9 +250,11 @@ def parameterSearchShell():
 			decdat_file = path.join(runcode.iSDataDirectory, 'decdat2.dat')
 			if(stat(decdat_file).st_size==0) :  
 				print 'decdat.dat is empty! Only calculate thermalization surface. \n'	
-				dEdphipFile = path.join(runcode.hydroInitialDirectory, 'dEdydphip_kln.dat')		
-				totaldEdyTest =dEcounters.dEdyTotalInital(dEdphipFile, \
-					norm_factor)		
+				# dEdphipFile = path.join(runcode.hydroInitialDirectory, 'dEdydphip_kln.dat') # for no prequilibrium		
+				# totaldEdyTest =dEcounters.dEdyTotalInital(dEdphipFile, \
+				# 	norm_factor)	
+				print "empty decdat2.dat!"
+				sys.exit(-1)	
 			else:
 				if pre_process_decdat2_file is True:
 					runcode.preProcessDecdat2File(runcode.iSDataDirectory)
