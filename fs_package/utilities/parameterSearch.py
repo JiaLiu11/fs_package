@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+ #!/usr/bin/env python
 
 # Author: Jia Liu
 
@@ -29,6 +29,7 @@ node_name = rootDir.split('/')[-1]  # get the name of current node
 node_index = int(node_name.split('e')[-1]) # index of tau_s for current folder
 backupDir_currentNode = path.join(rootDir, 'localdataBase', node_name)
 number_of_nodes = 20 # total number of nodes
+resumeMode = True
 
 # parameters for scaling factor search
 totaldEdyExpect = 1599.4  #from single-shot viscous hydro starting at 0.6fm/c, thermal pion+ num 210. 1547 for glb
@@ -37,6 +38,26 @@ pre_process_decdat2_file = True
 sfactorL = 0.01
 sfactorR = 20.0
 rescale_factor_guess = 9.0 #initial guess of rescaling factor, 20 for glb
+
+def findResumeRunNumber(param_log_fileName):
+	"""
+	find the number of events has been finished by counting how many lines in
+	the parameter search log file of the current node.
+	"""
+	finished_events = 0
+	if(path.isfile(param_log_fileName)):
+		try:
+			log_data = np.loadtxt(param_log_fileName)
+		except:
+			print "Empty parameter search log file!"
+		if(log_data.ndim==1):
+			finished_events = 1
+		else:
+			finished_events = log_data.shape[0] # a line represents a finished parameter search
+			print "Resume run from event: %d"%finished_events+1
+	else:
+		print "Parameter log file does not exists!"
+	return finished_events
 
 
 def extractParameterList(infile_name, outfile_name, node_idx):
@@ -189,7 +210,12 @@ def parameterSearchShell():
 	paramSearchLogFile.close()
 	param_search_log = path.join(rootDir, 'param_search_log.dat')
 
-	for i in range(params_list_currentNode.shape[0]):
+	# start event number
+	startFromNum = 0
+	if(resumeMode==True):
+		startFromNum = findResumeRunNumber(param_search_log)
+
+	for i in range(startFromNum, params_list_currentNode.shape[0]):
 		matching_time, eta_s, tdec, edec = params_list_currentNode[i,:]
 		print 'Running at taus=%g, eta/s=%.3f, Tdec=%.3f ... ' \
 			%(matching_time, eta_s, tdec)  
