@@ -30,6 +30,7 @@ node_index = int(node_name.split('e')[-1]) # index of tau_s for current folder
 backupDir_currentNode = path.join(rootDir, 'localdataBase', node_name)
 number_of_nodes = 20 # total number of nodes
 resumeMode = True
+skipEvent = True
 
 # parameters for scaling factor search
 totaldEdyExpect = 1547  #from single-shot viscous hydro starting at 0.6fm/c, thermal pion+ num 210. 1547 for glb
@@ -205,10 +206,17 @@ def parameterSearchShell():
 	sfactor_log = open(path.join(rootDir,'sfactor_log.dat'), 'a+')
 	sfactor_log.write("##Matching Time \t eta/s \t Tdec \t sfactor  \t totaldEdy \n")
 
-	paramSearchLogFile = open(path.join(rootDir, 'param_search_log.dat'),'a+') # store parameter search result
+	# store parameter search result
+	paramSearchLogFile = open(path.join(rootDir, 'param_search_log.dat'),'a+') 
 	paramSearchLogFile.write("#   tau_s \t eta/s \t tdec \t v2_ch  \t v3_ch \t meanpT_pion \t meanpT_proton \n")
 	paramSearchLogFile.close()
 	param_search_log = path.join(rootDir, 'param_search_log.dat')
+
+	# store skipped parameters
+	paramSearchSkipLogFile = open(path.join(rootDir, 'param_search_skipLog.dat'),'a+')
+	paramSearchSkipLogFile.write("# event_num \t tau_s \t eta/s \t tdec \t e_dec \n")
+	paramSearchSkipLogFile.close()
+	param_search_skipLog = path.join(rootDir, 'param_search_skipLog.dat')
 
 	# start event number
 	startFromNum = 0
@@ -217,6 +225,17 @@ def parameterSearchShell():
 
 	for i in range(startFromNum, params_list_currentNode.shape[0]):
 		matching_time, eta_s, tdec, edec = params_list_currentNode[i,:]
+		# skip a parameter combination
+		if(skipEvent==True and matching_time<0.1):
+			print 'Skipping taus=%g, eta/s=%.3f, Tdec=%.3f ... ' \
+				%(matching_time, eta_s, tdec)  
+			# keep a log of what parameter skipped
+			skipLog = open(param_search_skipLog, 'a+')
+			skipLog.write("%d \t %g \t %g \t %g \t %g\n"\
+				%(i+1, matching_time, eta_s, tdec, edec))
+			skipLog.flush()
+			skipLog.close()
+			continue
 		print 'Running at taus=%g, eta/s=%.3f, Tdec=%.3f ... ' \
 			%(matching_time, eta_s, tdec)  
 		# # get free-streamed data # for no pre-equilibrium
