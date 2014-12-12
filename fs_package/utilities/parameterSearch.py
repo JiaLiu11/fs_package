@@ -52,7 +52,7 @@ def findResumeRunNumber(param_log_fileName):
 		except:
 			print "Empty parameter search log file!"
 		if(log_data.ndim==1):
-			finished_events = 1
+			finished_events = 0 if(log_data.shape[0]==0) else 1
 		else:
 			finished_events = log_data.shape[0] # a line represents a finished parameter search
 			print "Resume run from event: %d"%(finished_events+1)

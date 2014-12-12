@@ -2,7 +2,7 @@
 
 # purpose: rerun iInteSp to recalculate the all charged particle flow
 #		   anisotropy at |eta|<0.5 in accordance with ATLAS data.
-
+# modification: runs have been compressed into node*.zip with structure node*/run_*.zip
 
 # libraries
 from os import path,stat, popen
@@ -21,14 +21,17 @@ enable_skip = True
 rootDir = path.abspath("..") #assume this file is placed under utilities/
 node_name = rootDir.split('/')[-1]  # get the name of current node
 node_index = int(node_name.split('e')[-1]) # index of events for current folder
-source_folder = path.join(path.abspath("../../../"), 'zipped_1300_runs')
+source_folder = path.join(path.abspath("../../../"), 'nofs_kln_v2_search_backup')
 backupDir= path.join(rootDir, 'localdataBase', node_name)
+source_temp = path.join(rootDir, 'localdataBase', 'temp') # store the decompressed node files
 runcode.cleanUpFolder(backupDir)
+runcode.cleanUpFolder(source_temp)
 
 # calculate run range
-runs_perNode = int(totalEvents_num/nodes_num)
-runs_begin = (node_index-1)*runs_perNode+1
-runs_end   = node_index*runs_perNode
+run_nodefile = path.join(source_folder, "node%d.zip"%node_index)
+runs_perNode = 50
+runs_begin = 1
+runs_end   = 50
 currentRuns_range= range(runs_begin, runs_end+1)
 
 
@@ -56,11 +59,15 @@ def reCalMultiplicity():
 	paramSearchLogFile.write("#    tau_s             eta/s         tdec           dNdeta\n")
 	print "Begin to recalculate charged multiplicity...\n"
 	print "current run from %d to %d \n"%(runs_begin, runs_end)
+	# unzip files for current node
+	shutil.copy(run_nodefile, source_temp)
+	call("unzip -q -j node%d.zip && rm -f node%d.zip "%(node_index, node_index), 
+		shell=True, cwd=source_temp)
 
 	for irun in currentRuns_range:
 		# copy data to iS results
 		runcode.cleanUpFolder(runcode.iSDataDirectory)
-		run_zip_source = path.join(source_folder, 'run_%d.zip'%irun)
+		run_zip_source = path.join(source_temp, 'run_%d.zip'%irun)
 		if(path.isfile(run_zip_source)==False):
 			if(enable_skip==True):
 				print "*** skip run: run_%d.zip"%irun
