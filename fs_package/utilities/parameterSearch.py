@@ -38,7 +38,7 @@ event_number = 99 # 99: for smooth event which maximizes epsilon_2
 pre_process_decdat2_file = True
 sfactorL = 0.01
 sfactorR = 20.0
-rescale_factor_guess = 10 #initial guess of rescaling factor, 10 for kln
+rescale_factor_guess = 10 #initial guess of rescaling factor, 10 for kln 
 
 def findResumeRunNumber(param_log_fileName):
 	"""
@@ -139,12 +139,12 @@ def getTotaldEdyOnly(dEdyd2rdphipFile, edFile, sfactor, dEdydphipthermFolder, \
     """
     run two functions from dEcounters to get the total dEdy.
     """
-  #   dEdy_therm = dEcounters.dEdydphipSigmaThermal(dEdyd2rdphipFile, edFile, sfactor, \
-		# dEdydphipthermFolder, dEdydphipFileName) # for no pre-equilibrium
+    dEdy_therm = dEcounters.dEdydphipSigmaThermal(dEdyd2rdphipFile, edFile, sfactor, \
+		dEdydphipthermFolder, dEdydphipFileName) # for no pre-equilibrium
     iSDataFolder = path.join(iSFolder, 'results')
     dEdy_fo = dEcounters.dEdydphipSigmaFO(iSFolder, iSDataFolder, dEdydphipHydroFolder, dEdydphipHydroFileName)
 
-    totaldEdy = dEdy_fo #dEdy_therm + dEdy_fo
+    totaldEdy = dEdy_therm + dEdy_fo
     return totaldEdy
 
 def storeParamSearchResults(event_id, data_folder, filename):
@@ -288,33 +288,33 @@ def parameterSearchShell():
 					runcode.iSDirectory, runcode.iSDataDirectory, 'dEdydphipFO.dat')   
 
 			#conditions for ending the loop
-			if( abs(totaldEdyTest-totaldEdyExpect) < 10):
+			if( abs(totaldEdyTest-totaldEdyExpect) < 10): 
 				sfactor_log.write("%8.4f       %20.8f    %20.8f		%20.8f    %20.4f\n"   \
 					%(matching_time, eta_s, tdec, norm_factor, totaldEdyTest))
 				sfactor_log.flush()
-				# run resonance decay
-				runRes_cmd = runcode.iSDirectory+'/./resonance.e >reslog.dat'
-				reso_code = call(runRes_cmd, shell=True, cwd=runcode.iSDirectory)
-				if reso_code == 0:
-				    pass
-				else:
-				    print 'parameterSearch: resonance decay failed!'
-				    sys.exit(-1)	
-				# run iInteSp
-				inteSp_cmd = runcode.iSDirectory+'/./iInteSp.e'
-				inteSp_code = call(inteSp_cmd, shell=True, cwd=runcode.iSDirectory)
-				if inteSp_code == 0:
-				    pass
-				else:
-				    print 'parameterSearch: iInteSp failed!'
-				    sys.exit(-1)	
+				# # run resonance decay
+				# runRes_cmd = runcode.iSDirectory+'/./resonance.e >reslog.dat'
+				# reso_code = call(runRes_cmd, shell=True, cwd=runcode.iSDirectory)
+				# if reso_code == 0:
+				#     pass
+				# else:
+				#     print 'parameterSearch: resonance decay failed!'
+				#     sys.exit(-1)	
+				# # run iInteSp
+				# inteSp_cmd = runcode.iSDirectory+'/./iInteSp.e'
+				# inteSp_code = call(inteSp_cmd, shell=True, cwd=runcode.iSDirectory)
+				# if inteSp_code == 0:
+				#     pass
+				# else:
+				#     print 'parameterSearch: iInteSp failed!'
+				#     sys.exit(-1)	
 				# calculate wn
-				calculateWn(runcode.iSDataDirectory)
+				dEcounters.calculateWn(runcode.iSDataDirectory)
 				wn_data = np.loadtxt(path.join(runcode.iSDataDirectory, "wn_integrated_vndata.dat"))
 				w2_data = wn_data[2, -1]
 				w3_data = wn_data[3, -1]
 				# write wn to file
-				wn_log = open(path.join(rootDir, "wn_log.dat"))
+				wn_log = open(path.join(rootDir, "wn_log.dat"), 'a+')
 				wn_log.write("%g   %g 	%g 	%g  %g  %g\n" \
 					%(matching_time, eta_s, tdec, edec, w2_data, w3_data))
 				wn_log.close()
@@ -328,7 +328,7 @@ def parameterSearchShell():
 					%(matching_time, eta_s, tdec, edec))
 				params_backup_file.close() 
 				# write down parameter search result
-				storeParamSearchResults(event_number, backupDir, param_search_log)
+				# storeParamSearchResults(event_number, backupDir, param_search_log)
 				# zip the backupdir and delete source files
 				zip_cmd = "zip -r -q -j -m "+ "run_%d.zip "%(i+1)+ backupDir 
 				zip_code = call(zip_cmd, shell=True, cwd=backupDir_currentNode)
