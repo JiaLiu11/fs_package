@@ -28,17 +28,17 @@ tableLocation = path.join(rootDir, "tables")
 node_name = rootDir.split('/')[-1]  # get the name of current node
 node_index = int(node_name.split('e')[-1]) # index of tau_s for current folder
 backupDir_currentNode = path.join(rootDir, 'localdataBase', node_name)
-number_of_nodes = 20 # total number of nodes
-resumeMode = True
-skipEvent = True
+number_of_nodes = 4 # total number of nodes
+resumeMode = False
+skipEvent = False
 
 # parameters for scaling factor search
-totaldEdyExpect = 1547  #from single-shot viscous hydro starting at 0.6fm/c, thermal pion+ num 210. 1547 for glb
+totaldEdyExpect = 1599.6  #from single-shot viscous hydro starting at 0.6fm/c, thermal pion+ num 210. 1599.6 for glb
 event_number = 99 # 99: for smooth event which maximizes epsilon_2
 pre_process_decdat2_file = True
 sfactorL = 0.01
 sfactorR = 20.0
-rescale_factor_guess = 20 #initial guess of rescaling factor, 20 for glb
+rescale_factor_guess = 10 #initial guess of rescaling factor, 10 for kln
 
 def findResumeRunNumber(param_log_fileName):
 	"""
@@ -196,7 +196,7 @@ def storeParamSearchResults(event_id, data_folder, filename):
 
 def parameterSearchShell():
 	# get search parameters for current nodes
-	params_list_source = path.join(tableLocation, "params_list_glb.dat") #"params_list_glb.dat" for glb
+	params_list_source = path.join(tableLocation, "params_list_kln.dat") #"params_list_glb.dat" for glb
 	params_list_current= path.join(rootDir, "params_list_"+
 		node_name+".dat")
 	extractParameterList(params_list_source, params_list_current, node_index)
@@ -238,16 +238,16 @@ def parameterSearchShell():
 			continue
 		print 'Running at taus=%g, eta/s=%.3f, Tdec=%.3f ... ' \
 			%(matching_time, eta_s, tdec)  
-		# # get free-streamed data # for no pre-equilibrium
-		# runlm(event_number, 0.01, matching_time, matching_time+0.01, 0.01, runcode.lmDirectory)
-		# lmDataDirectory = path.join(runcode.lmDirectory, 'data/result/event_' \
-		#                             + str(event_number)+"/"+ "%g" %matching_time)
-		# runcode.cleanUpFolder(runcode.hydroInitialDirectory)
-		# runcode.moveLmData2Hydro(lmDataDirectory, runcode.hydroInitialDirectory, \
-		# 	"%g" %matching_time)
-		# lmDataDirectory_upper = path.join(runcode.lmDirectory, 'data/result/event_' \
-		# 	+ str(event_number))
-		# runcode.cleanUpFolder(lmDataDirectory_upper)
+		# get free-streamed data # for no pre-equilibrium
+		runlm(event_number, 0.01, matching_time, matching_time+0.01, 0.01, runcode.lmDirectory)
+		lmDataDirectory = path.join(runcode.lmDirectory, 'data/result/event_' \
+		                            + str(event_number)+"/"+ "%g" %matching_time)
+		runcode.cleanUpFolder(runcode.hydroInitialDirectory)
+		runcode.moveLmData2Hydro(lmDataDirectory, runcode.hydroInitialDirectory, \
+			"%g" %matching_time)
+		lmDataDirectory_upper = path.join(runcode.lmDirectory, 'data/result/event_' \
+			+ str(event_number))
+		runcode.cleanUpFolder(lmDataDirectory_upper)
 
 		# start paramter search	
 		rescale_factor = rescale_factor_used
@@ -308,7 +308,16 @@ def parameterSearchShell():
 				else:
 				    print 'parameterSearch: iInteSp failed!'
 				    sys.exit(-1)	
-
+				# calculate wn
+				calculateWn(runcode.iSDataDirectory)
+				wn_data = np.loadtxt(path.join(runcode.iSDataDirectory, "wn_integrated_vndata.dat"))
+				w2_data = wn_data[2, -1]
+				w3_data = wn_data[3, -1]
+				# write wn to file
+				wn_log = open(path.join(rootDir, "wn_log.dat"))
+				wn_log.write("%g   %g 	%g 	%g  %g  %g\n" \
+					%(matching_time, eta_s, tdec, edec, w2_data, w3_data))
+				wn_log.close()
 				#backup the run files by zip
 				backupDir = path.join(backupDir_currentNode, 'run_%d'%(i+1))
 				runcode.backupEachRun(runcode.iSDataDirectory, backupDir)
