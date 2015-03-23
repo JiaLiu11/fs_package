@@ -5,7 +5,7 @@
 *
 *
 2           !IInitialization       initializion by Gaussian, Glauber, or CGC  (0: Gaussian, 1: Glauber, 2:read from Initial/InitialEd.dat)
-0           !IEin                  type of initialization  0:initialize by energy density 1: initialize by entropy density
+1           !IEin                  type of initialization  0:initialize by energy density 1: initialize by entropy density
 *
 *
 0.2        !ViscousC              eta/s (const.) (0: no shear viscosity)
@@ -32,4 +32,4 @@
 0           !IhydroJetoutput       switch for output hydro evolution history into hdf5 file
 *
 *
-1           !InitialURead
+0           !InitialURead

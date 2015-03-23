@@ -57,7 +57,10 @@ def  dEdydphipSigmaThermal(dEdyd2rdphipFile, edFile, sfactor, \
 
 	# extract the row which are corresponding to cells outside the freeze-out 
 	#surface
-	ed_data = sfactor*ed_data
+	if(edFile.split('/')[-1]=="init-energy.dat"): # for hydro output ed file sfactor has been multiplied
+		pass
+	else:
+		ed_data = sfactor*ed_data
 	ed_criteria = ed_data < Edec
 	ed_criteria_rowNum = np.reshape(ed_criteria, (ed_dataNum)) #reshape is done row-wise
 															# non-zero rows ed<Edec

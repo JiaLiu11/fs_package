@@ -38,7 +38,7 @@ event_number = 99 # 99: for smooth event which maximizes epsilon_2
 pre_process_decdat2_file = True
 sfactorL = 0.01
 sfactorR = 20.0
-rescale_factor_guess = 10 #initial guess of rescaling factor, 10 for kln 
+rescale_factor_guess = 5 #initial guess of rescaling factor, 10 for kln #debug
 
 def findResumeRunNumber(param_log_fileName):
 	"""
@@ -144,7 +144,8 @@ def getTotaldEdyOnly(dEdyd2rdphipFile, edFile, sfactor, dEdydphipthermFolder, \
     iSDataFolder = path.join(iSFolder, 'results')
     dEdy_fo = dEcounters.dEdydphipSigmaFO(iSFolder, iSDataFolder, dEdydphipHydroFolder, dEdydphipHydroFileName)
 
-    totaldEdy = dEdy_therm + dEdy_fo
+    totaldEdy = dEdy_fo #dEdy_therm + dEdy_fo
+    print "dEdy_therm = %10.6e, dEdy_fo = %10.6e\n"%(dEdy_therm, dEdy_fo)
     return totaldEdy
 
 def storeParamSearchResults(event_id, data_folder, filename):
@@ -241,10 +242,17 @@ def parameterSearchShell():
 		# get free-streamed data # for no pre-equilibrium
 		runlm(event_number, 0.01, matching_time, matching_time+0.01, 0.01, runcode.lmDirectory)
 		lmDataDirectory = path.join(runcode.lmDirectory, 'data/result/event_' \
-		                            + str(event_number)+"/"+ "%g" %matching_time)
-		runcode.cleanUpFolder(runcode.hydroInitialDirectory)
-		runcode.moveLmData2Hydro(lmDataDirectory, runcode.hydroInitialDirectory, \
-			"%g" %matching_time)
+		                            + str(event_number)+"/"+ "0.01")
+		# runcode.cleanUpFolder(runcode.hydroInitialDirectory)
+		# runcode.moveLmData2Hydro(lmDataDirectory, runcode.hydroInitialDirectory, \
+		# 	"%g" %matching_time)
+
+		if path.isfile(path.join(lmDataDirectory, 'dEdyd2rdphip_kln.dat')):
+			shutil.copy(path.join(lmDataDirectory, 'dEdyd2rdphip_kln.dat'),
+						path.join(runcode.hydroInitialDirectory,'dEd2rdphip_kln.dat'))
+		else:
+			print 'No such file: %g'%path.join(lmDataDirectory, 'dEdyd2rdphip_kln.dat')
+			sys.exit(-1)
 		lmDataDirectory_upper = path.join(runcode.lmDirectory, 'data/result/event_' \
 			+ str(event_number))
 		runcode.cleanUpFolder(lmDataDirectory_upper)
@@ -281,14 +289,14 @@ def parameterSearchShell():
 				runcode.runiS(runcode.iSDirectory)
 				#get the current total energy
 				dEdyd2rdphipFile = path.join(runcode.hydroInitialDirectory, 'dEd2rdphip_kln.dat')
-				edFile = path.join(runcode.hydroInitialDirectory, 'ed_profile_kln.dat')
+				edFile = path.join(runcode.hydroInitialDirectory, 'init-energy.dat')
 
 				totaldEdyTest = getTotaldEdyOnly(dEdyd2rdphipFile, edFile, norm_factor, \
 					runcode.iSDataDirectory, 'dEdydphipThermal.dat',\
 					runcode.iSDirectory, runcode.iSDataDirectory, 'dEdydphipFO.dat')   
 
 			#conditions for ending the loop
-			if( abs(totaldEdyTest-totaldEdyExpect) < 10): 
+			if( abs(totaldEdyTest-totaldEdyExpect) < 10):  #debug
 				sfactor_log.write("%8.4f       %20.8f    %20.8f		%20.8f    %20.4f\n"   \
 					%(matching_time, eta_s, tdec, norm_factor, totaldEdyTest))
 				sfactor_log.flush()
